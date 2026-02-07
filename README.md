@@ -1,85 +1,76 @@
-# Bleeps Bot
+# Bleeps
 
 Personal AI assistant for productivity and financial signals.
 
-## Current Status (Feb 7, 2025)
+**Live:** https://bleeps-bot.vercel.app
 
-### What's Working
-- [x] Next.js 15 web app deployed to Vercel (https://bleeps-bot.vercel.app)
-- [x] Supabase auth (magic link login)
-- [x] Database schema (users, messages, reminders, tasks, price_alerts)
-- [x] Landing page with pricing ($5/$10/$20 tiers)
-- [x] Chat UI with message history
-- [x] Settings page with Telegram link code display
-- [x] OpenClaw Telegram bot running locally (working)
+## What Is Bleeps?
 
-### In Progress
-- [ ] Deploy OpenClaw to Railway (cloud hosting)
-- [ ] Connect web app to OpenClaw gateway (instead of direct Claude API)
-- [ ] Stripe payments integration
+A personal AI assistant that works 24/7. Not a chatbot you open — an assistant that runs in the background and reaches out when it matters.
 
-### Not Started
-- [ ] Telegram bot connection to user accounts
-- [ ] WhatsApp integration (Twilio)
-- [ ] SMS integration (Twilio)
-- [ ] Daily briefings (cron)
-- [ ] Reminder scheduling
-- [ ] Price alerts
-- [ ] Financial signals (investing.xyz)
-- [ ] Notion integration (meeting notes)
+## Status
+
+| Component | Status | URL |
+|-----------|--------|-----|
+| Web App | Live | https://bleeps-bot.vercel.app |
+| Backend API | Live | https://bleeps-2-production.up.railway.app |
+| Auth | Working | Supabase magic link |
+| Chat | Working | Claude API |
 
 ## Architecture
 
 ```
-Users (Web, Telegram, WhatsApp, SMS)
-            │
-            ▼
-┌─────────────────────────┐
-│   Vercel (Next.js)      │  ← Web app, webhooks, cron
-│   bleeps-bot.vercel.app │
-└───────────┬─────────────┘
-            │
-            ▼
-┌─────────────────────────┐
-│   Railway (OpenClaw)    │  ← Agent brain, skills, memory
-│   Gateway + Pi Agent    │
-└───────────┬─────────────┘
-            │
-            ▼
-┌─────────────────────────┐
-│   Supabase              │  ← Users, auth, data
-│   + Claude API          │  ← NLP/reasoning
-│   + Stripe              │  ← Payments
-│   + Twilio              │  ← SMS/WhatsApp
-└─────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                         Users                                │
+│                    (Web / Mobile / Telegram)                 │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│                    Vercel (Next.js)                          │
+│                    bleeps-bot.vercel.app                     │
+│  - Landing page & auth                                       │
+│  - Chat UI                                                   │
+│  - Settings / subscription management                        │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│                    Railway (Express API)                     │
+│              bleeps-2-production.up.railway.app              │
+│  - Claude integration (reasoning)                            │
+│  - Tool execution                                            │
+│  - Session management                                        │
+└─────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────┐
+│                       Supabase                               │
+│  - Users & auth                                              │
+│  - Conversation history                                      │
+│  - Reminders, tasks, notes                                   │
+│  - Price alerts, portfolio data                              │
+│  - User memory & preferences                                 │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-## Pricing Tiers
+## Technical Approach
 
-| Tier | Price | Messages | Reminders | Channels |
-|------|-------|----------|-----------|----------|
-| Lite | $5/mo | 150/mo | 10 | Telegram |
-| Standard | $10/mo | 500/mo | 25 | Telegram + WhatsApp |
-| Pro | $20/mo | Unlimited | Unlimited | All + SMS |
+Claude as the orchestrator with modular tools:
+
+- **Core Tools:** Reminders, tasks, notes
+- **Financial Tools:** Price alerts, portfolio tracking (custom built)
+- **Adapted OpenClaw Skills:** Memory, learning, daily briefing
+- **Future:** Calendar, email, third-party integrations
+
+All tools store data in Supabase, scoped per user (multi-tenant).
+
+## Pricing
+
+| Tier | Price | Messages | Reminders | Price Alerts |
+|------|-------|----------|-----------|--------------|
+| Lite | $5/mo | 150/mo | 10 | 2 |
+| Standard | $10/mo | 500/mo | 25 | 10 |
+| Pro | $20/mo | Unlimited | Unlimited | Unlimited |
 
 14-day free trial for all tiers.
-
-## Environment Variables
-
-### Vercel (.env.local)
-```
-NEXT_PUBLIC_SUPABASE_URL=https://zfsjswgrbygowfojjbts.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...
-SUPABASE_SERVICE_ROLE_KEY=sb_secret_...
-ANTHROPIC_API_KEY=sk-ant-...
-NEXT_PUBLIC_SITE_URL=https://bleeps-bot.vercel.app
-```
-
-### Railway (OpenClaw)
-```
-ANTHROPIC_API_KEY=sk-ant-...
-# TBD - other OpenClaw config
-```
 
 ## Local Development
 
@@ -88,27 +79,55 @@ npm install
 npm run dev    # http://localhost:3000
 ```
 
-## Deployment
+## Environment Variables
 
-```bash
-vercel --prod  # Deploy to Vercel
+### Vercel
+```
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+NEXT_PUBLIC_SITE_URL=https://bleeps-bot.vercel.app
+OPENCLAW_GATEWAY_URL=https://bleeps-2-production.up.railway.app
+OPENCLAW_GATEWAY_TOKEN=
 ```
 
 ## Key Files
 
-- `/src/app/page.tsx` - Landing page with pricing
-- `/src/app/login/page.tsx` - Magic link auth
-- `/src/app/(app)/chat/page.tsx` - Chat interface
-- `/src/app/(app)/settings/page.tsx` - Settings + Telegram linking
-- `/src/app/api/chat/route.ts` - Chat API (currently Claude direct, will switch to OpenClaw)
-- `/src/lib/supabase.ts` - Supabase client + types
-- `/src/lib/auth-context.tsx` - Auth provider
-- `/supabase/schema.sql` - Database schema
+| File | Purpose |
+|------|---------|
+| `/src/app/page.tsx` | Landing page |
+| `/src/app/login/page.tsx` | Magic link auth |
+| `/src/app/(app)/chat/page.tsx` | Chat interface |
+| `/src/app/api/chat/route.ts` | Chat API → Railway |
+| `/src/lib/supabase.ts` | Supabase client |
+| `/src/lib/auth-context.tsx` | Auth provider |
+| `/supabase/schema.sql` | Database schema |
 
-## Next Steps
+## Roadmap
 
-1. Deploy OpenClaw to Railway
-2. Update `/api/chat` to call OpenClaw gateway instead of Claude directly
-3. Add Stripe checkout
-4. Connect Telegram bot to user accounts
-5. Add reminders/scheduling
+### Phase 1: Core (Current)
+- [x] Web app deployed
+- [x] Backend API deployed
+- [x] Auth working
+- [x] Basic chat working
+- [ ] Core tools (reminders, tasks, notes)
+- [ ] Price alerts
+
+### Phase 2: Intelligence
+- [ ] Memory system
+- [ ] Daily briefing
+- [ ] Learning system
+
+### Phase 3: Channels
+- [ ] Telegram bot
+- [ ] Push notifications
+- [ ] WhatsApp
+
+### Phase 4: Integrations
+- [ ] Google Calendar
+- [ ] Gmail
+- [ ] Notion
+
+## Related Repos
+
+- [bleeps-2](https://github.com/shivmadan/bleeps-2) — Backend API (Express)
