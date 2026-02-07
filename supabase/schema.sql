@@ -64,6 +64,16 @@ create table public.price_alerts (
   created_at timestamptz not null default now()
 );
 
+-- User memory table (for AI personalization)
+create table public.user_memory (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid references public.users on delete cascade not null,
+  fact text not null,
+  category text not null default 'other' check (category in ('preference', 'personal', 'work', 'health', 'financial', 'other')),
+  source text not null default 'conversation',
+  created_at timestamptz not null default now()
+);
+
 -- Indexes for performance
 create index idx_messages_user_id on public.messages(user_id);
 create index idx_messages_created_at on public.messages(created_at desc);
@@ -72,6 +82,8 @@ create index idx_reminders_due_at on public.reminders(due_at) where not complete
 create index idx_tasks_user_id on public.tasks(user_id);
 create index idx_price_alerts_user_id on public.price_alerts(user_id);
 create index idx_users_telegram_chat_id on public.users(telegram_chat_id);
+create index idx_user_memory_user_id on public.user_memory(user_id);
+create index idx_user_memory_category on public.user_memory(category);
 
 -- Row Level Security (RLS)
 alter table public.users enable row level security;
@@ -79,6 +91,7 @@ alter table public.messages enable row level security;
 alter table public.reminders enable row level security;
 alter table public.tasks enable row level security;
 alter table public.price_alerts enable row level security;
+alter table public.user_memory enable row level security;
 
 -- Policies: Users can only access their own data
 create policy "Users can view own profile" on public.users
@@ -109,6 +122,12 @@ create policy "Users can view own price alerts" on public.price_alerts
   for select using (auth.uid() = user_id);
 
 create policy "Users can manage own price alerts" on public.price_alerts
+  for all using (auth.uid() = user_id);
+
+create policy "Users can view own memories" on public.user_memory
+  for select using (auth.uid() = user_id);
+
+create policy "Users can manage own memories" on public.user_memory
   for all using (auth.uid() = user_id);
 
 -- Function to create user profile on signup
