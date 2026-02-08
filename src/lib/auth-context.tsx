@@ -35,6 +35,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { data: { session }, error } = result
         if (error) {
           console.error('Session error:', error)
+          setSession(null)
+          setAuthUser(null)
+          setUser(null)
           setLoading(false)
           return
         }
@@ -43,11 +46,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (session?.user) {
           fetchUserProfile(session.user.id)
         } else {
+          setUser(null)
           setLoading(false)
         }
       })
       .catch((err) => {
         console.error('Auth error or timeout:', err.message)
+        setSession(null)
+        setAuthUser(null)
+        setUser(null)
         setLoading(false)
       })
 
@@ -98,10 +105,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function signOut() {
-    await supabase.auth.signOut()
+    try {
+      await supabase.auth.signOut()
+    } catch (err) {
+      console.error('Sign out error:', err)
+    }
     setUser(null)
     setAuthUser(null)
     setSession(null)
+    // Redirect to login
+    window.location.href = '/login'
   }
 
   return (
