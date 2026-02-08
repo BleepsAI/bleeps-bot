@@ -1,19 +1,27 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/lib/auth-context'
 
 export default function Home() {
   const { authUser, loading } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   useEffect(() => {
+    // If there's a code param, redirect to auth callback (Supabase magic link)
+    const code = searchParams.get('code')
+    if (code) {
+      router.replace(`/auth/callback?code=${code}`)
+      return
+    }
+
     if (!loading && authUser) {
       router.push('/chat')
     }
-  }, [authUser, loading, router])
+  }, [authUser, loading, router, searchParams])
 
   if (loading) {
     return (
