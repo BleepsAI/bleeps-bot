@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Race getSession against a timeout
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Auth timeout')), 3000)
+      setTimeout(() => reject(new Error('Auth timeout')), 10000)
     )
 
     Promise.race([

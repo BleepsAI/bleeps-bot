@@ -69,7 +69,8 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({
         message: lastMessage.content,
-        sessionId: userId || 'anonymous',
+        userId: userId || null,
+        channel: 'web',
       }),
     })
 

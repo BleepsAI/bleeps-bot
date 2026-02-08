@@ -74,6 +74,17 @@ create table public.user_memory (
   created_at timestamptz not null default now()
 );
 
+-- User profiles table (for display name, timezone, preferences)
+create table public.user_profiles (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid references public.users on delete cascade unique not null,
+  display_name text,
+  timezone text not null default 'America/New_York',
+  notification_preferences jsonb not null default '{"reminders": true, "daily_summary": false}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 -- Indexes for performance
 create index idx_messages_user_id on public.messages(user_id);
 create index idx_messages_created_at on public.messages(created_at desc);
@@ -84,6 +95,7 @@ create index idx_price_alerts_user_id on public.price_alerts(user_id);
 create index idx_users_telegram_chat_id on public.users(telegram_chat_id);
 create index idx_user_memory_user_id on public.user_memory(user_id);
 create index idx_user_memory_category on public.user_memory(category);
+create index idx_user_profiles_user_id on public.user_profiles(user_id);
 
 -- Row Level Security (RLS)
 alter table public.users enable row level security;
@@ -92,6 +104,7 @@ alter table public.reminders enable row level security;
 alter table public.tasks enable row level security;
 alter table public.price_alerts enable row level security;
 alter table public.user_memory enable row level security;
+alter table public.user_profiles enable row level security;
 
 -- Policies: Users can only access their own data
 create policy "Users can view own profile" on public.users
@@ -128,6 +141,12 @@ create policy "Users can view own memories" on public.user_memory
   for select using (auth.uid() = user_id);
 
 create policy "Users can manage own memories" on public.user_memory
+  for all using (auth.uid() = user_id);
+
+create policy "Users can view own profile" on public.user_profiles
+  for select using (auth.uid() = user_id);
+
+create policy "Users can manage own profile" on public.user_profiles
   for all using (auth.uid() = user_id);
 
 -- Function to create user profile on signup
