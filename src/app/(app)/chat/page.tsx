@@ -27,21 +27,22 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
-  // Detect timezone from IP on mount
+  // Detect timezone from IP on mount (non-blocking)
   useEffect(() => {
-    async function detectTimezone() {
-      try {
-        const res = await fetch('https://worldtimeapi.org/api/ip')
-        const data = await res.json()
+    // Start with browser timezone immediately
+    setDetectedTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone)
+
+    // Then try to get more accurate timezone from IP (don't block on this)
+    fetch('https://worldtimeapi.org/api/ip', { signal: AbortSignal.timeout(3000) })
+      .then(res => res.json())
+      .then(data => {
         if (data.timezone) {
           setDetectedTimezone(data.timezone)
         }
-      } catch (err) {
-        // Fallback to browser timezone
-        setDetectedTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone)
-      }
-    }
-    detectTimezone()
+      })
+      .catch(() => {
+        // Ignore errors, we already have browser timezone
+      })
   }, [])
 
   const scrollToBottom = () => {
