@@ -1,49 +1,59 @@
 import { createServerClient } from '@supabase/ssr'
-import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
+import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
-  const requestUrl = new URL(request.url)
-  const token_hash = requestUrl.searchParams.get('token_hash')
-  const type = requestUrl.searchParams.get('type')
-  const code = requestUrl.searchParams.get('code')
+  const { searchParams, origin } = new URL(request.url)
+  const code = searchParams.get('code')
+  const token_hash = searchParams.get('token_hash')
+  const type = searchParams.get('type')
+  const next = searchParams.get('next') ?? '/chat'
 
-  const cookieStore = await cookies()
+  if (code || (token_hash && type)) {
+    const cookieStore = await cookies()
 
-  // Prepare response first so we can set cookies on it
-  const response = NextResponse.redirect(new URL('/chat', requestUrl.origin))
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll()
+          },
+          setAll(cookiesToSet) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              )
+            } catch {
+              // The `setAll` method was called from a Server Component.
+              // This can be ignored if you have middleware refreshing user sessions.
+            }
+          },
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options)
-          })
-        },
-      },
-    }
-  )
+      }
+    )
 
-  if (token_hash && type) {
-    // Magic link flow
-    const { error } = await supabase.auth.verifyOtp({
-      token_hash,
-      type: type as 'email' | 'magiclink',
-    })
-    if (error) {
-      console.error('Auth error:', error)
-      return NextResponse.redirect(new URL('/login?error=auth_failed', requestUrl.origin))
+    if (code) {
+      const { error } = await supabase.auth.exchangeCodeForSession(code)
+      if (error) {
+        console.error('Code exchange error:', error)
+        return NextResponse.redirect(`${origin}/login?error=auth_failed`)
+      }
+    } else if (token_hash && type) {
+      const { error } = await supabase.auth.verifyOtp({
+        token_hash,
+        type: type as 'email' | 'magiclink',
+      })
+      if (error) {
+        console.error('OTP verify error:', error)
+        return NextResponse.redirect(`${origin}/login?error=auth_failed`)
+      }
     }
-  } else if (code) {
-    // OAuth/PKCE flow
-    await supabase.auth.exchangeCodeForSession(code)
+
+    return NextResponse.redirect(`${origin}${next}`)
   }
 
-  return response
+  // No code or token_hash, redirect to login
+  return NextResponse.redirect(`${origin}/login?error=missing_code`)
 }
