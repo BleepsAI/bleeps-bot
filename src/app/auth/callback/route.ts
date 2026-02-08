@@ -7,7 +7,18 @@ export async function GET(request: Request) {
   const code = searchParams.get('code')
   const token_hash = searchParams.get('token_hash')
   const type = searchParams.get('type')
+  const error = searchParams.get('error')
+  const error_description = searchParams.get('error_description')
   const next = searchParams.get('next') ?? '/chat'
+
+  // Log for debugging
+  console.log('Auth callback:', { code: !!code, token_hash: !!token_hash, type, error, error_description })
+
+  // If Supabase returned an error
+  if (error) {
+    console.error('Supabase auth error:', error, error_description)
+    return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(error_description || error)}`)
+  }
 
   if (code || (token_hash && type)) {
     const cookieStore = await cookies()
