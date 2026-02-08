@@ -85,6 +85,18 @@ create table public.user_profiles (
   updated_at timestamptz not null default now()
 );
 
+-- Push subscriptions table (for Web Push notifications)
+create table public.push_subscriptions (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid references public.users on delete cascade not null,
+  endpoint text not null,
+  p256dh text not null,
+  auth text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique(user_id, endpoint)
+);
+
 -- Indexes for performance
 create index idx_messages_user_id on public.messages(user_id);
 create index idx_messages_created_at on public.messages(created_at desc);
@@ -96,6 +108,7 @@ create index idx_users_telegram_chat_id on public.users(telegram_chat_id);
 create index idx_user_memory_user_id on public.user_memory(user_id);
 create index idx_user_memory_category on public.user_memory(category);
 create index idx_user_profiles_user_id on public.user_profiles(user_id);
+create index idx_push_subscriptions_user_id on public.push_subscriptions(user_id);
 
 -- Row Level Security (RLS)
 alter table public.users enable row level security;
@@ -105,6 +118,7 @@ alter table public.tasks enable row level security;
 alter table public.price_alerts enable row level security;
 alter table public.user_memory enable row level security;
 alter table public.user_profiles enable row level security;
+alter table public.push_subscriptions enable row level security;
 
 -- Policies: Users can only access their own data
 create policy "Users can view own profile" on public.users
@@ -147,6 +161,12 @@ create policy "Users can view own profile" on public.user_profiles
   for select using (auth.uid() = user_id);
 
 create policy "Users can manage own profile" on public.user_profiles
+  for all using (auth.uid() = user_id);
+
+create policy "Users can view own push subscriptions" on public.push_subscriptions
+  for select using (auth.uid() = user_id);
+
+create policy "Users can manage own push subscriptions" on public.push_subscriptions
   for all using (auth.uid() = user_id);
 
 -- Function to create user profile on signup
