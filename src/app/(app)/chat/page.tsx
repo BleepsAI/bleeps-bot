@@ -12,7 +12,7 @@ interface Message {
 }
 
 export default function ChatPage() {
-  const { user } = useAuth()
+  const { user, authUser } = useAuth()
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -23,8 +23,26 @@ export default function ChatPage() {
   ])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [detectedTimezone, setDetectedTimezone] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  // Detect timezone from IP on mount
+  useEffect(() => {
+    async function detectTimezone() {
+      try {
+        const res = await fetch('https://worldtimeapi.org/api/ip')
+        const data = await res.json()
+        if (data.timezone) {
+          setDetectedTimezone(data.timezone)
+        }
+      } catch (err) {
+        // Fallback to browser timezone
+        setDetectedTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone)
+      }
+    }
+    detectTimezone()
+  }, [])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -53,11 +71,12 @@ export default function ChatPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: user?.id,
+          userId: authUser?.id,
           messages: [...messages, userMessage].map((m) => ({
             role: m.role,
             content: m.content,
           })),
+          detectedTimezone,
         }),
       })
 

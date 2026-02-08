@@ -12,7 +12,7 @@ const supabase = createClient(
 
 export async function POST(request: NextRequest) {
   try {
-    const { messages, userId } = await request.json()
+    const { messages, userId, detectedTimezone } = await request.json()
 
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: 'Messages required' }, { status: 400 })
@@ -71,6 +71,7 @@ export async function POST(request: NextRequest) {
         message: lastMessage.content,
         userId: userId || null,
         channel: 'web',
+        detectedTimezone: detectedTimezone || null,
       }),
     })
 
