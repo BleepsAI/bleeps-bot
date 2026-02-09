@@ -47,15 +47,19 @@ export async function GET(request: NextRequest) {
 // PATCH /api/tasks - Update a task
 export async function PATCH(request: NextRequest) {
   try {
-    const { taskId, completed } = await request.json()
+    const { taskId, completed, title } = await request.json()
 
     if (!taskId) {
       return NextResponse.json({ error: 'taskId required' }, { status: 400 })
     }
 
+    const updates: { completed?: boolean; title?: string } = {}
+    if (completed !== undefined) updates.completed = completed
+    if (title !== undefined) updates.title = title
+
     const { error } = await supabase
       .from('tasks')
-      .update({ completed })
+      .update(updates)
       .eq('id', taskId)
 
     if (error) {
@@ -67,5 +71,31 @@ export async function PATCH(request: NextRequest) {
   } catch (error) {
     console.error('Tasks PATCH error:', error)
     return NextResponse.json({ error: 'Failed to update task' }, { status: 500 })
+  }
+}
+
+// DELETE /api/tasks - Delete a task
+export async function DELETE(request: NextRequest) {
+  try {
+    const { taskId } = await request.json()
+
+    if (!taskId) {
+      return NextResponse.json({ error: 'taskId required' }, { status: 400 })
+    }
+
+    const { error } = await supabase
+      .from('tasks')
+      .delete()
+      .eq('id', taskId)
+
+    if (error) {
+      console.error('Error deleting task:', error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Tasks DELETE error:', error)
+    return NextResponse.json({ error: 'Failed to delete task' }, { status: 500 })
   }
 }

@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Bell, CheckCircle, Clock, Loader2 } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Bell, CheckCircle, Loader2, MoreVertical, Pencil, Trash2, X, Check } from 'lucide-react'
 
 type FilterType = 'all' | 'reminders' | 'tasks'
 
@@ -12,9 +12,7 @@ interface InboxItem {
   description?: string
   time: string
   status: string
-  chatId: string
   chatName: string
-  priority?: string
 }
 
 // Get anonymous user ID from localStorage
@@ -70,6 +68,10 @@ export default function InboxPage() {
   const [filter, setFilter] = useState<FilterType>('all')
   const [items, setItems] = useState<InboxItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editValue, setEditValue] = useState('')
+  const editInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const fetchInbox = async () => {
@@ -89,6 +91,72 @@ export default function InboxPage() {
 
     fetchInbox()
   }, [])
+
+  useEffect(() => {
+    if (editingId && editInputRef.current) {
+      editInputRef.current.focus()
+    }
+  }, [editingId])
+
+  useEffect(() => {
+    const handleClickOutside = () => setMenuOpenId(null)
+    if (menuOpenId) {
+      document.addEventListener('click', handleClickOutside)
+      return () => document.removeEventListener('click', handleClickOutside)
+    }
+  }, [menuOpenId])
+
+  const startEdit = (item: InboxItem) => {
+    setEditingId(item.id)
+    setEditValue(item.title)
+    setMenuOpenId(null)
+  }
+
+  const cancelEdit = () => {
+    setEditingId(null)
+    setEditValue('')
+  }
+
+  const saveEdit = async (item: InboxItem) => {
+    if (!editValue.trim() || item.title === editValue.trim()) {
+      cancelEdit()
+      return
+    }
+
+    const oldItems = items
+    setItems(prev =>
+      prev.map(i => i.id === item.id ? { ...i, title: editValue.trim() } : i)
+    )
+    setEditingId(null)
+
+    try {
+      await fetch('/api/inbox', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: item.id, type: item.type, title: editValue.trim() })
+      })
+    } catch (error) {
+      console.error('Error updating item:', error)
+      setItems(oldItems)
+    }
+  }
+
+  const deleteItem = async (item: InboxItem) => {
+    const oldItems = items
+    setItems(prev => prev.filter(i => i.id !== item.id))
+    setMenuOpenId(null)
+
+    try {
+      await fetch('/api/inbox', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: item.id, type: item.type })
+      })
+    } catch (error) {
+      console.error('Error deleting item:', error)
+      setItems(oldItems)
+    }
+  }
 
   const filteredItems = items.filter((item) => {
     if (filter === 'all') return true
@@ -142,36 +210,90 @@ export default function InboxPage() {
             {filteredItems.map((item) => (
               <div
                 key={item.id}
-                className="flex gap-3 p-4 transition-colors hover:bg-muted/50"
+                className="flex gap-3 p-4 transition-colors hover:bg-muted/50 group"
               >
                 <div className="mt-0.5 text-primary">
                   {getIcon(item.type)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium">{item.title}</span>
-                    {item.priority === 'high' && (
-                      <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded">
-                        High
-                      </span>
-                    )}
-                  </div>
-                  {item.description && (
-                    <p className="text-sm text-muted-foreground mt-0.5 truncate">
-                      {item.description}
-                    </p>
+                  {editingId === item.id ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        ref={editInputRef}
+                        type="text"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') saveEdit(item)
+                          if (e.key === 'Escape') cancelEdit()
+                        }}
+                        className="flex-1 text-sm bg-muted px-2 py-1 rounded focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                      <button
+                        onClick={() => saveEdit(item)}
+                        className="p-1 text-green-600 hover:bg-muted rounded"
+                      >
+                        <Check className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={cancelEdit}
+                        className="p-1 text-muted-foreground hover:bg-muted rounded"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="font-medium">{item.title}</span>
+                      {item.description && (
+                        <p className="text-sm text-muted-foreground mt-0.5 truncate">
+                          {item.description}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-xs text-muted-foreground">
+                          {formatTime(item.time)}
+                        </span>
+                        {item.chatName !== 'Personal' && (
+                          <span className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                            {item.chatName}
+                          </span>
+                        )}
+                      </div>
+                    </>
                   )}
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs text-muted-foreground">
-                      {formatTime(item.time)}
-                    </span>
-                    {item.chatName !== 'Personal' && (
-                      <span className="text-xs bg-muted px-1.5 py-0.5 rounded">
-                        {item.chatName}
-                      </span>
+                </div>
+                {editingId !== item.id && (
+                  <div className="relative">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setMenuOpenId(menuOpenId === item.id ? null : item.id)
+                      }}
+                      className="p-1 opacity-0 group-hover:opacity-100 hover:bg-muted rounded transition-opacity"
+                    >
+                      <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                    {menuOpenId === item.id && (
+                      <div className="absolute right-0 top-full mt-1 bg-background border border-border rounded-lg shadow-lg z-10 py-1 min-w-[120px]">
+                        <button
+                          onClick={() => startEdit(item)}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
+                        >
+                          <Pencil className="h-4 w-4" />
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => deleteItem(item)}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-muted"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Delete
+                        </button>
+                      </div>
                     )}
                   </div>
-                </div>
+                )}
               </div>
             ))}
           </div>

@@ -77,3 +77,63 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to fetch inbox' }, { status: 500 })
   }
 }
+
+// DELETE /api/inbox - Delete a reminder or task
+export async function DELETE(request: NextRequest) {
+  try {
+    const { id, type } = await request.json()
+
+    if (!id || !type) {
+      return NextResponse.json({ error: 'id and type required' }, { status: 400 })
+    }
+
+    const table = type === 'reminder' ? 'reminders' : 'tasks'
+
+    const { error } = await supabase
+      .from(table)
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      console.error(`Error deleting ${type}:`, error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Inbox DELETE error:', error)
+    return NextResponse.json({ error: 'Failed to delete item' }, { status: 500 })
+  }
+}
+
+// PATCH /api/inbox - Update a reminder or task
+export async function PATCH(request: NextRequest) {
+  try {
+    const { id, type, title, completed } = await request.json()
+
+    if (!id || !type) {
+      return NextResponse.json({ error: 'id and type required' }, { status: 400 })
+    }
+
+    const table = type === 'reminder' ? 'reminders' : 'tasks'
+    const updates: Record<string, unknown> = {}
+
+    if (title !== undefined) updates.title = title
+    if (completed !== undefined) updates.completed = completed
+
+    const { error } = await supabase
+      .from(table)
+      .update(updates)
+      .eq('id', id)
+
+    if (error) {
+      console.error(`Error updating ${type}:`, error)
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Inbox PATCH error:', error)
+    return NextResponse.json({ error: 'Failed to update item' }, { status: 500 })
+  }
+}
