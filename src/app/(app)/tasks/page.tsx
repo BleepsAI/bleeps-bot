@@ -7,11 +7,8 @@ interface Task {
   id: string
   title: string
   description?: string
-  status: string
-  priority?: string
+  completed: boolean
   dueDate?: string
-  chatId: string
-  chatName: string
   createdAt: string
 }
 
@@ -27,7 +24,7 @@ function getAnonymousUserId(): string {
 }
 
 function getSection(task: Task): 'today' | 'tomorrow' | 'upcoming' | 'completed' | 'no-date' {
-  if (task.status === 'done') return 'completed'
+  if (task.completed) return 'completed'
   if (!task.dueDate) return 'no-date'
 
   const due = new Date(task.dueDate)
@@ -87,24 +84,24 @@ export default function TasksPage() {
   }, [])
 
   const toggleTask = async (task: Task) => {
-    const newStatus = task.status === 'done' ? 'pending' : 'done'
+    const newCompleted = !task.completed
 
     // Optimistic update
     setTasks(prev =>
-      prev.map(t => t.id === task.id ? { ...t, status: newStatus } : t)
+      prev.map(t => t.id === task.id ? { ...t, completed: newCompleted } : t)
     )
 
     try {
       await fetch('/api/tasks', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ taskId: task.id, status: newStatus })
+        body: JSON.stringify({ taskId: task.id, completed: newCompleted })
       })
     } catch (error) {
       console.error('Error updating task:', error)
       // Revert on error
       setTasks(prev =>
-        prev.map(t => t.id === task.id ? { ...t, status: task.status } : t)
+        prev.map(t => t.id === task.id ? { ...t, completed: task.completed } : t)
       )
     }
   }
@@ -152,34 +149,22 @@ export default function TasksPage() {
                       className="flex items-start gap-3 py-2 cursor-pointer group"
                     >
                       <button className="flex-shrink-0 text-muted-foreground group-hover:text-foreground mt-0.5">
-                        {task.status === 'done' ? (
+                        {task.completed ? (
                           <CheckCircle2 className="h-5 w-5 text-primary" />
                         ) : (
                           <Circle className="h-5 w-5" />
                         )}
                       </button>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`text-sm ${
-                              task.status === 'done' ? 'text-muted-foreground line-through' : ''
-                            }`}
-                          >
-                            {task.title}
-                          </span>
-                          {task.priority === 'high' && task.status !== 'done' && (
-                            <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded">
-                              High
-                            </span>
-                          )}
-                        </div>
-                        {task.chatName !== 'Personal' && (
-                          <span className="text-xs text-muted-foreground">
-                            {task.chatName}
-                          </span>
-                        )}
+                        <span
+                          className={`text-sm ${
+                            task.completed ? 'text-muted-foreground line-through' : ''
+                          }`}
+                        >
+                          {task.title}
+                        </span>
                       </div>
-                      {task.dueDate && task.status !== 'done' && (
+                      {task.dueDate && !task.completed && (
                         <span className="text-xs text-muted-foreground">
                           {formatDueDate(task.dueDate)}
                         </span>

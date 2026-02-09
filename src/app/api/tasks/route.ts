@@ -6,7 +6,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-// GET /api/tasks - Get user's tasks across all chats
+// GET /api/tasks - Get user's tasks
 export async function GET(request: NextRequest) {
   try {
     const userId = request.nextUrl.searchParams.get('userId')
@@ -15,23 +15,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'userId required' }, { status: 400 })
     }
 
-    // Get all chat IDs the user is a member of
-    const { data: memberships } = await supabase
-      .from('chat_members')
-      .select('chat_id')
-      .eq('user_id', userId)
-
-    const chatIds = (memberships || []).map(m => m.chat_id)
-
-    if (chatIds.length === 0) {
-      return NextResponse.json({ tasks: [] })
-    }
-
-    // Fetch all tasks
+    // Fetch tasks by user_id (how backend saves them)
     const { data: tasks, error } = await supabase
       .from('tasks')
-      .select('id, title, description, status, priority, due_date, chat_id, created_at')
-      .in('chat_id', chatIds)
+      .select('id, title, description, completed, due_date, created_at')
+      .eq('user_id', userId)
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -39,27 +27,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    // Get chat names
-    const { data: chats } = await supabase
-      .from('chats')
-      .select('id, name, type')
-      .in('id', chatIds)
-
-    const chatMap: Record<string, string> = {}
-    for (const chat of chats || []) {
-      chatMap[chat.id] = chat.type === 'solo' ? 'Personal' : chat.name
-    }
-
     // Format tasks
     const formattedTasks = (tasks || []).map(t => ({
       id: t.id,
       title: t.title,
       description: t.description,
-      status: t.status,
-      priority: t.priority,
+      completed: t.completed,
       dueDate: t.due_date,
-      chatId: t.chat_id,
-      chatName: chatMap[t.chat_id] || 'Unknown',
       createdAt: t.created_at
     }))
 
@@ -73,7 +47,7 @@ export async function GET(request: NextRequest) {
 // PATCH /api/tasks - Update a task
 export async function PATCH(request: NextRequest) {
   try {
-    const { taskId, status } = await request.json()
+    const { taskId, completed } = await request.json()
 
     if (!taskId) {
       return NextResponse.json({ error: 'taskId required' }, { status: 400 })
@@ -81,7 +55,7 @@ export async function PATCH(request: NextRequest) {
 
     const { error } = await supabase
       .from('tasks')
-      .update({ status, updated_at: new Date().toISOString() })
+      .update({ completed })
       .eq('id', taskId)
 
     if (error) {
