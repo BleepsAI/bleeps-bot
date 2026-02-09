@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Send, Mic } from 'lucide-react'
-import { useAuth } from '@/lib/auth-context'
 
 interface Message {
   id: string
@@ -11,8 +10,20 @@ interface Message {
   timestamp: Date
 }
 
+// Generate or retrieve anonymous user ID
+function getAnonymousUserId(): string {
+  if (typeof window === 'undefined') return 'anonymous'
+
+  let id = localStorage.getItem('bleeps_user_id')
+  if (!id) {
+    id = 'anon_' + Math.random().toString(36).substring(2, 15)
+    localStorage.setItem('bleeps_user_id', id)
+  }
+  return id
+}
+
 export default function ChatPage() {
-  const { user, authUser } = useAuth()
+  const [userId, setUserId] = useState<string>('anonymous')
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -27,12 +38,15 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
+  // Get user ID on mount
+  useEffect(() => {
+    setUserId(getAnonymousUserId())
+  }, [])
+
   // Detect timezone from IP on mount (non-blocking)
   useEffect(() => {
-    // Start with browser timezone immediately
     setDetectedTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone)
 
-    // Then try to get more accurate timezone from IP (don't block on this)
     fetch('https://worldtimeapi.org/api/ip', { signal: AbortSignal.timeout(3000) })
       .then(res => res.json())
       .then(data => {
@@ -40,9 +54,7 @@ export default function ChatPage() {
           setDetectedTimezone(data.timezone)
         }
       })
-      .catch(() => {
-        // Ignore errors, we already have browser timezone
-      })
+      .catch(() => {})
   }, [])
 
   const scrollToBottom = () => {
@@ -72,7 +84,7 @@ export default function ChatPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: authUser?.id,
+          userId,
           messages: [...messages, userMessage].map((m) => ({
             role: m.role,
             content: m.content,

@@ -1,10 +1,8 @@
 'use client'
 
-import { useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { MessageSquare, Inbox, CheckSquare, Settings } from 'lucide-react'
-import { useAuth } from '@/lib/auth-context'
 
 const tabs = [
   { href: '/chat', label: 'Chat', icon: MessageSquare },
@@ -19,26 +17,6 @@ export default function AppLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname()
-  const router = useRouter()
-  const { authUser, loading } = useAuth()
-
-  useEffect(() => {
-    if (!loading && !authUser) {
-      router.push('/login')
-    }
-  }, [authUser, loading, router])
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    )
-  }
-
-  if (!authUser) {
-    return null
-  }
 
   return (
     <div className="flex flex-col h-screen">
