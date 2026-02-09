@@ -462,9 +462,9 @@ export default function ChatPage() {
       </div>
 
       {/* Input */}
-      <div className="border-t border-border bg-card px-4 py-3 safe-bottom">
-        <div className="flex items-center gap-3">
-          <div className="flex-1 relative flex items-center">
+      <div className="border-t border-border bg-card p-4 safe-bottom">
+        <div className="flex items-center justify-center gap-3">
+          <div className="flex-1 relative">
             <textarea
               ref={inputRef}
               value={input}
@@ -474,8 +474,8 @@ export default function ChatPage() {
                 ? `Message ${currentChat.name}...`
                 : "Message Bleeps..."}
               rows={1}
-              className="w-full resize-none rounded-2xl border border-border bg-muted px-4 py-3 pr-12 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-shadow"
-              style={{ minHeight: '46px', maxHeight: '120px' }}
+              className="w-full resize-none rounded-2xl border border-border bg-muted px-4 py-3 pr-12 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-shadow align-middle"
+              style={{ maxHeight: '120px' }}
             />
             <button
               type="button"
@@ -488,7 +488,7 @@ export default function ChatPage() {
           <button
             onClick={sendMessage}
             disabled={!input.trim() || isLoading}
-            className="flex-shrink-0 self-center flex items-center justify-center h-[46px] w-[46px] rounded-full bg-primary text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+            className="flex-shrink-0 flex items-center justify-center h-[46px] w-[46px] rounded-full bg-primary text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
             aria-label="Send message"
           >
             <Send className="h-5 w-5" />
