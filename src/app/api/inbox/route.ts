@@ -6,7 +6,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-// GET /api/inbox - Get user's reminders and tasks across all chats
+// GET /api/inbox - Get user's reminders and tasks
 export async function GET(request: NextRequest) {
   try {
     const userId = request.nextUrl.searchParams.get('userId')
@@ -15,37 +15,25 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'userId required' }, { status: 400 })
     }
 
-    // Get all chat IDs the user is a member of
-    const { data: memberships } = await supabase
-      .from('chat_members')
-      .select('chat_id')
-      .eq('user_id', userId)
-
-    const chatIds = (memberships || []).map(m => m.chat_id)
-
-    if (chatIds.length === 0) {
-      return NextResponse.json({ items: [] })
-    }
-
-    // Fetch reminders (pending and recent completed)
+    // Fetch reminders by user_id (pending only)
     const { data: reminders, error: remindersError } = await supabase
       .from('reminders')
-      .select('id, message, remind_at, status, chat_id, created_at')
-      .in('chat_id', chatIds)
-      .in('status', ['pending', 'sent'])
-      .order('remind_at', { ascending: true })
+      .select('id, title, due_at, completed, created_at')
+      .eq('user_id', userId)
+      .eq('completed', false)
+      .order('due_at', { ascending: true })
       .limit(50)
 
     if (remindersError) {
       console.error('Error fetching reminders:', remindersError)
     }
 
-    // Fetch tasks (incomplete)
+    // Fetch tasks by user_id (incomplete only)
     const { data: tasks, error: tasksError } = await supabase
       .from('tasks')
-      .select('id, title, description, status, priority, due_date, chat_id, created_at')
-      .in('chat_id', chatIds)
-      .neq('status', 'done')
+      .select('id, title, description, completed, due_date, created_at')
+      .eq('user_id', userId)
+      .eq('completed', false)
       .order('created_at', { ascending: false })
       .limit(50)
 
@@ -53,27 +41,15 @@ export async function GET(request: NextRequest) {
       console.error('Error fetching tasks:', tasksError)
     }
 
-    // Get chat names for context
-    const { data: chats } = await supabase
-      .from('chats')
-      .select('id, name, type')
-      .in('id', chatIds)
-
-    const chatMap: Record<string, string> = {}
-    for (const chat of chats || []) {
-      chatMap[chat.id] = chat.type === 'solo' ? 'Personal' : chat.name
-    }
-
     // Format items
     const items = [
       ...(reminders || []).map(r => ({
         id: r.id,
         type: 'reminder' as const,
-        title: r.message,
-        time: r.remind_at,
-        status: r.status,
-        chatId: r.chat_id,
-        chatName: chatMap[r.chat_id] || 'Unknown',
+        title: r.title,
+        time: r.due_at,
+        status: r.completed ? 'done' : 'pending',
+        chatName: 'Personal',
         createdAt: r.created_at
       })),
       ...(tasks || []).map(t => ({
@@ -82,15 +58,13 @@ export async function GET(request: NextRequest) {
         title: t.title,
         description: t.description,
         time: t.due_date || t.created_at,
-        status: t.status,
-        priority: t.priority,
-        chatId: t.chat_id,
-        chatName: chatMap[t.chat_id] || 'Unknown',
+        status: t.completed ? 'done' : 'pending',
+        chatName: 'Personal',
         createdAt: t.created_at
       }))
     ]
 
-    // Sort by time (upcoming first for reminders, recent first for tasks)
+    // Sort by time (upcoming first)
     items.sort((a, b) => {
       const timeA = new Date(a.time).getTime()
       const timeB = new Date(b.time).getTime()
