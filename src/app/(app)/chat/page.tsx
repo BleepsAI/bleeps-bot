@@ -1,13 +1,21 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Send, Mic } from 'lucide-react'
+import { Send, Mic, ChevronDown, Users, User, Plus } from 'lucide-react'
 
 interface Message {
   id: string
   role: 'user' | 'assistant'
   content: string
   timestamp: Date
+}
+
+interface ChatInfo {
+  id: string
+  type: 'solo' | 'group'
+  name: string
+  role?: string
+  invite_code?: string
 }
 
 // Generate or retrieve anonymous user ID (proper UUID format)
@@ -27,6 +35,10 @@ function getAnonymousUserId(): string {
 
 export default function ChatPage() {
   const [userId, setUserId] = useState<string>('anonymous')
+  const [chatId, setChatId] = useState<string | null>(null)
+  const [currentChat, setCurrentChat] = useState<ChatInfo | null>(null)
+  const [chats, setChats] = useState<{ solo: ChatInfo | null; groups: ChatInfo[] }>({ solo: null, groups: [] })
+  const [showChatPicker, setShowChatPicker] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(true)
@@ -34,30 +46,85 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
-  // Get user ID and initial greeting on mount
+  // Get user ID and fetch chats on mount
   useEffect(() => {
     const id = getAnonymousUserId()
     setUserId(id)
 
-    // Get personalized greeting from backend
-    const fetchGreeting = async () => {
-      try {
-        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
-        setDetectedTimezone(tz)
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+    setDetectedTimezone(tz)
 
+    // Fetch user's chats
+    const fetchChats = async () => {
+      try {
+        const response = await fetch(`/api/groups?userId=${id}`)
+        if (response.ok) {
+          const data = await response.json()
+          setChats({
+            solo: data.soloChat,
+            groups: data.groups || []
+          })
+
+          // Check for stored chat preference
+          const storedChatId = localStorage.getItem('bleeps_current_chat_id')
+          if (storedChatId) {
+            // Find the chat
+            if (data.soloChat?.id === storedChatId) {
+              setCurrentChat(data.soloChat)
+              setChatId(storedChatId)
+            } else {
+              const group = data.groups?.find((g: ChatInfo) => g.id === storedChatId)
+              if (group) {
+                setCurrentChat({ ...group, type: 'group' })
+                setChatId(storedChatId)
+              } else {
+                // Default to solo
+                setCurrentChat(data.soloChat)
+                setChatId(data.soloChat?.id || null)
+              }
+            }
+          } else {
+            // Default to solo chat
+            setCurrentChat(data.soloChat)
+            setChatId(data.soloChat?.id || null)
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching chats:', error)
+      }
+    }
+
+    fetchChats()
+  }, [])
+
+  // Fetch greeting when chatId changes
+  useEffect(() => {
+    if (!userId || userId === 'anonymous') return
+
+    const fetchGreeting = async () => {
+      setIsLoading(true)
+      setMessages([])
+
+      try {
         const response = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            userId: id,
+            userId,
+            chatId,
             messages: [{ role: 'user', content: '__greeting__' }],
-            detectedTimezone: tz,
+            detectedTimezone,
             isGreeting: true,
           }),
         })
 
         if (response.ok) {
           const data = await response.json()
+          // Update chatId if returned from backend
+          if (data.chatId && !chatId) {
+            setChatId(data.chatId)
+            localStorage.setItem('bleeps_current_chat_id', data.chatId)
+          }
           setMessages([{
             id: '1',
             role: 'assistant',
@@ -65,7 +132,6 @@ export default function ChatPage() {
             timestamp: new Date(),
           }])
         } else {
-          // Fallback greeting
           setMessages([{
             id: '1',
             role: 'assistant',
@@ -74,7 +140,6 @@ export default function ChatPage() {
           }])
         }
       } catch {
-        // Fallback greeting
         setMessages([{
           id: '1',
           role: 'assistant',
@@ -87,8 +152,7 @@ export default function ChatPage() {
     }
 
     fetchGreeting()
-  }, [])
-
+  }, [userId, chatId, detectedTimezone])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -97,6 +161,13 @@ export default function ChatPage() {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+
+  const switchChat = (chat: ChatInfo) => {
+    setCurrentChat(chat)
+    setChatId(chat.id)
+    localStorage.setItem('bleeps_current_chat_id', chat.id)
+    setShowChatPicker(false)
+  }
 
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return
@@ -118,6 +189,7 @@ export default function ChatPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId,
+          chatId,
           messages: [...messages, userMessage].map((m) => ({
             role: m.role,
             content: m.content,
@@ -130,6 +202,12 @@ export default function ChatPage() {
 
       const data = await response.json()
 
+      // Update chatId if returned
+      if (data.chatId && data.chatId !== chatId) {
+        setChatId(data.chatId)
+        localStorage.setItem('bleeps_current_chat_id', data.chatId)
+      }
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -138,6 +216,19 @@ export default function ChatPage() {
       }
 
       setMessages((prev) => [...prev, assistantMessage])
+
+      // Check if a group was created and refresh chats
+      if (data.content.toLowerCase().includes('created group') ||
+          data.content.toLowerCase().includes('share this code')) {
+        const chatsResponse = await fetch(`/api/groups?userId=${userId}`)
+        if (chatsResponse.ok) {
+          const chatsData = await chatsResponse.json()
+          setChats({
+            solo: chatsData.soloChat,
+            groups: chatsData.groups || []
+          })
+        }
+      }
     } catch (error) {
       console.error('Error sending message:', error)
       const errorMessage: Message = {
@@ -161,10 +252,90 @@ export default function ChatPage() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
+      {/* Header with Chat Switcher */}
       <header className="flex items-center justify-between px-4 py-3 border-b border-border safe-top">
-        <h1 className="text-lg font-semibold">Bleeps</h1>
+        <div className="relative">
+          <button
+            onClick={() => setShowChatPicker(!showChatPicker)}
+            className="flex items-center gap-2 text-lg font-semibold hover:bg-muted px-2 py-1 rounded-lg transition-colors"
+          >
+            {currentChat?.type === 'group' ? (
+              <Users className="h-5 w-5" />
+            ) : (
+              <User className="h-5 w-5" />
+            )}
+            <span>{currentChat?.name || 'Bleeps'}</span>
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          </button>
+
+          {/* Chat Picker Dropdown */}
+          {showChatPicker && (
+            <div className="absolute top-full left-0 mt-1 w-64 bg-background border border-border rounded-lg shadow-lg z-50">
+              <div className="p-2">
+                <p className="text-xs text-muted-foreground px-2 py-1">Your Chats</p>
+
+                {/* Solo Chat */}
+                {chats.solo && (
+                  <button
+                    onClick={() => switchChat(chats.solo!)}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors ${
+                      currentChat?.id === chats.solo.id ? 'bg-muted' : ''
+                    }`}
+                  >
+                    <User className="h-4 w-4" />
+                    <span className="text-sm">Personal</span>
+                  </button>
+                )}
+
+                {/* Groups */}
+                {chats.groups.length > 0 && (
+                  <>
+                    <div className="border-t border-border my-2" />
+                    <p className="text-xs text-muted-foreground px-2 py-1">Groups</p>
+                    {chats.groups.map((group) => (
+                      <button
+                        key={group.id}
+                        onClick={() => switchChat({ ...group, type: 'group' })}
+                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors ${
+                          currentChat?.id === group.id ? 'bg-muted' : ''
+                        }`}
+                      >
+                        <Users className="h-4 w-4" />
+                        <span className="text-sm">{group.name}</span>
+                        {group.role === 'owner' && (
+                          <span className="text-xs text-muted-foreground ml-auto">owner</span>
+                        )}
+                      </button>
+                    ))}
+                  </>
+                )}
+
+                {/* Create Group Hint */}
+                <div className="border-t border-border mt-2 pt-2">
+                  <p className="text-xs text-muted-foreground px-3 py-2">
+                    Say &quot;create a group called [name]&quot; to make a new group
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Current chat indicator for groups */}
+        {currentChat?.type === 'group' && (
+          <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+            Group Chat
+          </span>
+        )}
       </header>
+
+      {/* Click outside to close dropdown */}
+      {showChatPicker && (
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => setShowChatPicker(false)}
+        />
+      )}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
@@ -184,7 +355,7 @@ export default function ChatPage() {
             </div>
           </div>
         ))}
-        {isLoading && (
+        {isLoading && messages.length > 0 && (
           <div className="flex justify-start">
             <div className="bg-muted rounded-2xl px-4 py-2">
               <div className="flex space-x-1">
@@ -207,7 +378,9 @@ export default function ChatPage() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Message Bleeps..."
+              placeholder={currentChat?.type === 'group'
+                ? `Message ${currentChat.name}...`
+                : "Message Bleeps..."}
               rows={1}
               className="w-full resize-none rounded-2xl border border-border bg-muted px-4 py-3 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               style={{ maxHeight: '120px' }}

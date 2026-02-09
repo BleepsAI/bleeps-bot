@@ -12,7 +12,7 @@ const supabase = createClient(
 
 export async function POST(request: NextRequest) {
   try {
-    const { messages, userId, detectedTimezone, isGreeting } = await request.json()
+    const { messages, userId, detectedTimezone, isGreeting, chatId } = await request.json()
 
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: 'Messages required' }, { status: 400 })
@@ -70,6 +70,7 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         message: lastMessage.content,
         userId: userId || null,
+        chatId: chatId || null,
         channel: 'web',
         detectedTimezone: detectedTimezone || null,
         isGreeting: isGreeting || false,
@@ -84,17 +85,12 @@ export async function POST(request: NextRequest) {
 
     const data = await gatewayResponse.json()
     const content = data.response || data.message || data.content || ''
+    const responseChatId = data.chatId || chatId
 
-    // Save messages to database if userId provided
-    if (userId) {
-      const lastUserMessage = messages[messages.length - 1]
-      await supabase.from('messages').insert([
-        { user_id: userId, role: 'user', content: lastUserMessage.content, channel: 'web' },
-        { user_id: userId, role: 'assistant', content, channel: 'web' },
-      ])
-    }
+    // Note: Messages are now saved by the backend with chat_id
+    // We don't need to save them here anymore
 
-    return NextResponse.json({ content })
+    return NextResponse.json({ content, chatId: responseChatId })
   } catch (error) {
     console.error('Chat error:', error)
     return NextResponse.json(
