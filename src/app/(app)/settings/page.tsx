@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { ChevronRight, Bell, BellOff, HelpCircle, Trash2, Copy, Check, AtSign, Loader2 } from 'lucide-react'
+import { ChevronRight, Bell, BellOff, HelpCircle, Trash2, Copy, Check, AtSign, Loader2, Pencil, X } from 'lucide-react'
 import {
   getPushPermissionState,
   subscribeToPush,
@@ -35,6 +35,7 @@ export default function SettingsPage() {
   const [handleError, setHandleError] = useState<string | null>(null)
   const [claiming, setClaiming] = useState(false)
   const [handleLoading, setHandleLoading] = useState(true)
+  const [isEditingHandle, setIsEditingHandle] = useState(false)
 
   // Get user ID on mount
   useEffect(() => {
@@ -196,9 +197,52 @@ export default function SettingsPage() {
   }
 
   const copyHandle = () => {
-    navigator.clipboard.writeText(currentHandle ? `@${currentHandle}` : userId)
+    navigator.clipboard.writeText(currentHandle ? `bleeps.ai/@${currentHandle}` : userId)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const startEditingHandle = () => {
+    setHandleInput(currentHandle || '')
+    setIsEditingHandle(true)
+    setHandleStatus('idle')
+    setHandleError(null)
+  }
+
+  const cancelEditingHandle = () => {
+    setHandleInput(currentHandle || '')
+    setIsEditingHandle(false)
+    setHandleStatus('idle')
+    setHandleError(null)
+  }
+
+  const saveHandle = async () => {
+    if (handleStatus !== 'available' || !handleInput || handleInput === currentHandle) return
+
+    setClaiming(true)
+    try {
+      const response = await fetch('/api/handle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, handle: handleInput })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setCurrentHandle(data.handle)
+        setIsEditingHandle(false)
+        setHandleStatus('idle')
+      } else {
+        setHandleError(data.error || 'Failed to save handle')
+        setHandleStatus('taken')
+      }
+    } catch (error) {
+      console.error('Save handle error:', error)
+      setHandleError('Failed to save handle')
+    } finally {
+      setClaiming(false)
+    }
   }
 
   const handleClearData = () => {
@@ -228,9 +272,9 @@ export default function SettingsPage() {
               <Loader2 className="h-4 w-4 animate-spin" />
               <span className="text-sm">Loading...</span>
             </div>
-          ) : currentHandle ? (
-            // Has handle - show it with copy button
-            <div className="space-y-3">
+          ) : currentHandle && !isEditingHandle ? (
+            // Has handle - display mode
+            <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <div className="flex-1 flex items-center bg-muted px-3 py-2 rounded">
                   <AtSign className="h-4 w-4 text-muted-foreground mr-1" />
@@ -239,51 +283,65 @@ export default function SettingsPage() {
                 <button
                   onClick={copyHandle}
                   className="p-2 hover:bg-muted rounded transition-colors"
+                  title="Copy profile link"
                 >
                   {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
                 </button>
+                <button
+                  onClick={startEditingHandle}
+                  className="p-2 hover:bg-muted rounded transition-colors"
+                  title="Edit handle"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Friends can invite you with @{currentHandle}
+                Share your profile: bleeps.ai/@{currentHandle}
               </p>
-
-              {/* Edit handle */}
-              <div className="pt-2">
-                <p className="text-xs text-muted-foreground mb-2">Change handle:</p>
-                <div className="flex items-center gap-2">
-                  <div className="flex-1 relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">@</span>
-                    <input
-                      type="text"
-                      value={handleInput}
-                      onChange={handleInputChange}
-                      maxLength={15}
-                      className="w-full pl-7 pr-3 py-2 bg-muted rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                      placeholder="yourhandle"
-                    />
-                  </div>
-                  {handleInput !== currentHandle && (
-                    <button
-                      onClick={claimHandle}
-                      disabled={handleStatus !== 'available' || claiming}
-                      className="px-3 py-2 bg-primary text-primary-foreground rounded text-sm font-medium disabled:opacity-50"
-                    >
-                      {claiming ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
-                    </button>
-                  )}
+            </div>
+          ) : currentHandle && isEditingHandle ? (
+            // Has handle - edit mode
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="flex-1 relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">@</span>
+                  <input
+                    type="text"
+                    value={handleInput}
+                    onChange={handleInputChange}
+                    maxLength={15}
+                    autoFocus
+                    className="w-full pl-7 pr-3 py-2 bg-muted rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    placeholder="yourhandle"
+                  />
                 </div>
-                {handleInput !== currentHandle && (
-                  <div className="mt-1 text-xs">
-                    {handleStatus === 'checking' && (
-                      <span className="text-muted-foreground">Checking...</span>
-                    )}
-                    {handleStatus === 'available' && (
-                      <span className="text-green-600">Available!</span>
-                    )}
-                    {(handleStatus === 'taken' || handleStatus === 'invalid') && handleError && (
-                      <span className="text-red-500">{handleError}</span>
-                    )}
-                  </div>
+                <button
+                  onClick={saveHandle}
+                  disabled={handleStatus !== 'available' || claiming || handleInput === currentHandle}
+                  className="p-2 bg-primary text-primary-foreground rounded disabled:opacity-50"
+                  title="Save"
+                >
+                  {claiming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                </button>
+                <button
+                  onClick={cancelEditingHandle}
+                  className="p-2 hover:bg-muted rounded transition-colors"
+                  title="Cancel"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <div className="text-xs">
+                {handleInput === currentHandle ? (
+                  <span className="text-muted-foreground">Current handle</span>
+                ) : handleStatus === 'checking' ? (
+                  <span className="text-muted-foreground">Checking...</span>
+                ) : handleStatus === 'available' ? (
+                  <span className="text-green-600">Available!</span>
+                ) : (handleStatus === 'taken' || handleStatus === 'invalid') && handleError ? (
+                  <span className="text-red-500">{handleError}</span>
+                ) : (
+                  <span className="text-muted-foreground">3-15 characters, letters, numbers, and underscores</span>
                 )}
               </div>
             </div>
