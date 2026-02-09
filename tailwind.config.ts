@@ -11,6 +11,7 @@ const config: Config = {
       colors: {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
+        card: 'hsl(var(--card))',
         primary: {
           DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))',
@@ -20,6 +21,12 @@ const config: Config = {
           foreground: 'hsl(var(--muted-foreground))',
         },
         border: 'hsl(var(--border))',
+        ring: 'hsl(var(--ring))',
+      },
+      fontSize: {
+        'xs': ['0.75rem', { lineHeight: '1rem' }],
+        'sm': ['0.875rem', { lineHeight: '1.25rem' }],
+        'base': ['1rem', { lineHeight: '1.5rem' }],
       },
     },
   },

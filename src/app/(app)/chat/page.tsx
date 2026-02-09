@@ -317,11 +317,11 @@ export default function ChatPage() {
   return (
     <div className="flex flex-col h-full">
       {/* Header with Chat Switcher */}
-      <header className="flex items-center justify-between px-4 py-3 border-b border-border safe-top">
+      <header className="flex items-center justify-between px-4 py-3 border-b border-border bg-card safe-top">
         <div className="relative">
           <button
             onClick={() => setShowChatPicker(!showChatPicker)}
-            className="flex items-center gap-2 text-lg font-semibold hover:bg-muted px-2 py-1 rounded-lg transition-colors"
+            className="flex items-center gap-2 text-base font-semibold hover:bg-muted px-2 py-1.5 rounded-lg transition-colors"
           >
             {currentChat?.type === 'group' ? (
               <Users className="h-5 w-5" />
@@ -334,9 +334,9 @@ export default function ChatPage() {
 
           {/* Chat Picker Dropdown */}
           {showChatPicker && (
-            <div className="absolute top-full left-0 mt-1 w-64 bg-background border border-border rounded-lg shadow-lg z-50">
+            <div className="absolute top-full left-0 mt-2 w-64 bg-card border border-border rounded-xl shadow-xl z-50">
               <div className="p-2">
-                <p className="text-xs text-muted-foreground px-2 py-1">Your Chats</p>
+                <p className="text-xs text-muted-foreground px-2 py-1.5 uppercase tracking-wide font-medium">Your Chats</p>
 
                 {/* Solo Chat */}
                 {chats.solo && (
@@ -355,7 +355,7 @@ export default function ChatPage() {
                 {chats.groups.length > 0 && (
                   <>
                     <div className="border-t border-border my-2" />
-                    <p className="text-xs text-muted-foreground px-2 py-1">Groups</p>
+                    <p className="text-xs text-muted-foreground px-2 py-1.5 uppercase tracking-wide font-medium">Groups</p>
                     {chats.groups.map((group) => (
                       <div
                         key={group.id}
@@ -381,7 +381,7 @@ export default function ChatPage() {
                               aria-label={`Copy invite link for ${group.name}`}
                             >
                               {copiedGroupId === group.id ? (
-                                <Check className="h-4 w-4 text-green-500" />
+                                <Check className="h-4 w-4 text-green-400" />
                               ) : (
                                 <Copy className="h-4 w-4 text-muted-foreground" />
                               )}
@@ -415,8 +415,8 @@ export default function ChatPage() {
 
         {/* Current chat indicator for groups */}
         {currentChat?.type === 'group' && (
-          <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
-            Group Chat
+          <span className="text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full font-medium">
+            Group
           </span>
         )}
       </header>
@@ -430,30 +430,30 @@ export default function ChatPage() {
       )}
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
         {messages.map((message) => (
           <div
             key={message.id}
             className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`max-w-[85%] rounded-2xl px-4 py-2 ${
+              className={`max-w-[85%] rounded-2xl px-4 py-2.5 ${
                 message.role === 'user'
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-muted'
               }`}
             >
-              <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+              <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
             </div>
           </div>
         ))}
         {isLoading && messages.length > 0 && (
           <div className="flex justify-start">
-            <div className="bg-muted rounded-2xl px-4 py-2">
-              <div className="flex space-x-1">
-                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" />
-                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce delay-100" />
-                <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce delay-200" />
+            <div className="bg-muted rounded-2xl px-4 py-3">
+              <div className="flex space-x-1.5">
+                <div className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce" />
+                <div className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce [animation-delay:0.1s]" />
+                <div className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce [animation-delay:0.2s]" />
               </div>
             </div>
           </div>
@@ -462,8 +462,8 @@ export default function ChatPage() {
       </div>
 
       {/* Input */}
-      <div className="border-t border-border p-4 safe-bottom">
-        <div className="flex items-end gap-2">
+      <div className="border-t border-border bg-card p-4 safe-bottom">
+        <div className="flex items-end gap-3">
           <div className="flex-1 relative">
             <textarea
               ref={inputRef}
@@ -474,12 +474,12 @@ export default function ChatPage() {
                 ? `Message ${currentChat.name}...`
                 : "Message Bleeps..."}
               rows={1}
-              className="w-full resize-none rounded-2xl border border-border bg-muted px-4 py-3 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full resize-none rounded-2xl border border-border bg-muted px-4 py-3 pr-12 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-shadow"
               style={{ maxHeight: '120px' }}
             />
             <button
               type="button"
-              className="absolute right-3 bottom-3 text-muted-foreground hover:text-foreground"
+              className="absolute right-3 bottom-3 text-muted-foreground hover:text-foreground transition-colors"
               aria-label="Voice input"
             >
               <Mic className="h-5 w-5" />
@@ -488,7 +488,7 @@ export default function ChatPage() {
           <button
             onClick={sendMessage}
             disabled={!input.trim() || isLoading}
-            className="flex items-center justify-center h-11 w-11 rounded-full bg-primary text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center justify-center h-11 w-11 rounded-full bg-primary text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
             aria-label="Send message"
           >
             <Send className="h-5 w-5" />

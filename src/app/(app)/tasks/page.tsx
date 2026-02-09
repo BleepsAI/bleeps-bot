@@ -194,8 +194,8 @@ export default function TasksPage() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <header className="flex items-center justify-between px-4 py-3 border-b border-border safe-top">
-        <h1 className="text-lg font-semibold">Tasks</h1>
+      <header className="flex items-center justify-between px-4 py-3 border-b border-border bg-card safe-top">
+        <h1 className="text-base font-semibold">Tasks</h1>
       </header>
 
       {/* Tasks list */}
@@ -218,7 +218,7 @@ export default function TasksPage() {
 
             return (
               <div key={section.key} className="mb-6">
-                <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
                   {section.label}
                 </h2>
                 <div className="space-y-1">
@@ -253,7 +253,7 @@ export default function TasksPage() {
                             />
                             <button
                               onClick={() => saveEdit(task.id)}
-                              className="p-1 text-green-600 hover:bg-muted rounded"
+                              className="p-1 text-green-500 hover:bg-muted rounded"
                             >
                               <Check className="h-4 w-4" />
                             </button>
@@ -291,17 +291,17 @@ export default function TasksPage() {
                             <MoreVertical className="h-4 w-4 text-muted-foreground" />
                           </button>
                           {menuOpenId === task.id && (
-                            <div className="absolute right-0 top-full mt-1 bg-background border border-border rounded-lg shadow-lg z-10 py-1 min-w-[120px]">
+                            <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-xl z-10 py-1 min-w-[120px]">
                               <button
                                 onClick={() => startEdit(task)}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
+                                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors"
                               >
                                 <Pencil className="h-4 w-4" />
                                 Edit
                               </button>
                               <button
                                 onClick={() => deleteTask(task.id)}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-muted"
+                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-muted transition-colors"
                               >
                                 <Trash2 className="h-4 w-4" />
                                 Delete

@@ -27,16 +27,16 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900">Bleeps</h1>
-          <p className="mt-2 text-gray-600">Your AI assistant</p>
+          <h1 className="text-3xl font-bold text-foreground">Bleeps</h1>
+          <p className="mt-2 text-muted-foreground">Your AI assistant</p>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="email" className="block text-sm font-medium text-foreground">
               Email address
             </label>
             <input
@@ -45,7 +45,7 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              className="mt-1 block w-full px-4 py-3 bg-muted border border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
               placeholder="you@example.com"
             />
           </div>
@@ -53,18 +53,18 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+            className="w-full flex justify-center py-3 px-4 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 transition-opacity"
           >
             {loading ? 'Sending...' : 'Send magic link'}
           </button>
 
           {message && (
-            <p className="text-center text-sm text-gray-600">{message}</p>
+            <p className="text-center text-sm text-muted-foreground">{message}</p>
           )}
         </form>
 
-        <div className="mt-8 border-t pt-6">
-          <p className="text-center text-sm text-gray-500">
+        <div className="mt-8 border-t border-border pt-6">
+          <p className="text-center text-sm text-muted-foreground">
             14-day free trial, then $5/mo
           </p>
         </div>

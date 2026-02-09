@@ -168,18 +168,18 @@ export default function InboxPage() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <header className="px-4 py-3 border-b border-border safe-top">
+      <header className="px-4 py-3 border-b border-border bg-card safe-top">
         <div className="flex items-center justify-between mb-3">
-          <h1 className="text-lg font-semibold">Inbox</h1>
+          <h1 className="text-base font-semibold">Inbox</h1>
         </div>
 
         {/* Filters */}
-        <div className="flex gap-1">
+        <div className="flex gap-1.5">
           {filters.map((f) => (
             <button
               key={f.key}
               onClick={() => setFilter(f.key)}
-              className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
                 filter === f.key
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-muted text-muted-foreground hover:text-foreground'
@@ -210,7 +210,7 @@ export default function InboxPage() {
             {filteredItems.map((item) => (
               <div
                 key={item.id}
-                className="flex gap-3 p-4 transition-colors hover:bg-muted/50 group"
+                className="flex gap-3 px-4 py-3 transition-colors hover:bg-muted/30 group"
               >
                 <div className="mt-0.5 text-primary">
                   {getIcon(item.type)}
@@ -231,7 +231,7 @@ export default function InboxPage() {
                       />
                       <button
                         onClick={() => saveEdit(item)}
-                        className="p-1 text-green-600 hover:bg-muted rounded"
+                        className="p-1 text-green-500 hover:bg-muted rounded"
                       >
                         <Check className="h-4 w-4" />
                       </button>
@@ -275,17 +275,17 @@ export default function InboxPage() {
                       <MoreVertical className="h-4 w-4 text-muted-foreground" />
                     </button>
                     {menuOpenId === item.id && (
-                      <div className="absolute right-0 top-full mt-1 bg-background border border-border rounded-lg shadow-lg z-10 py-1 min-w-[120px]">
+                      <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-xl shadow-xl z-10 py-1 min-w-[120px]">
                         <button
                           onClick={() => startEdit(item)}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors"
                         >
                           <Pencil className="h-4 w-4" />
                           Edit
                         </button>
                         <button
                           onClick={() => deleteItem(item)}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-500 hover:bg-muted"
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-muted transition-colors"
                         >
                           <Trash2 className="h-4 w-4" />
                           Delete

@@ -264,15 +264,15 @@ export default function SettingsPage() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <header className="px-4 py-3 border-b border-border safe-top">
-        <h1 className="text-lg font-semibold">Settings</h1>
+      <header className="px-4 py-3 border-b border-border bg-card safe-top">
+        <h1 className="text-base font-semibold">Settings</h1>
       </header>
 
       {/* Settings list */}
       <div className="flex-1 overflow-y-auto">
         {/* Your Handle */}
         <div className="p-4 border-b border-border">
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+          <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
             Your Handle
           </h2>
 
@@ -294,7 +294,7 @@ export default function SettingsPage() {
                   className="p-2 hover:bg-muted rounded transition-colors"
                   title="Copy profile link"
                 >
-                  {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                  {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
                 </button>
                 <button
                   onClick={startEditingHandle}
@@ -346,9 +346,9 @@ export default function SettingsPage() {
                 ) : handleStatus === 'checking' ? (
                   <span className="text-muted-foreground">Checking...</span>
                 ) : handleStatus === 'available' ? (
-                  <span className="text-green-600">Available!</span>
+                  <span className="text-green-500">Available!</span>
                 ) : (handleStatus === 'taken' || handleStatus === 'invalid') && handleError ? (
-                  <span className="text-red-500">{handleError}</span>
+                  <span className="text-red-400">{handleError}</span>
                 ) : (
                   <span className="text-muted-foreground">3-15 characters, letters, numbers, and underscores</span>
                 )}
@@ -385,10 +385,10 @@ export default function SettingsPage() {
                   <span className="text-muted-foreground">Checking availability...</span>
                 )}
                 {handleStatus === 'available' && (
-                  <span className="text-green-600">@{handleInput} is available!</span>
+                  <span className="text-green-500">@{handleInput} is available!</span>
                 )}
                 {(handleStatus === 'taken' || handleStatus === 'invalid') && handleError && (
-                  <span className="text-red-500">{handleError}</span>
+                  <span className="text-red-400">{handleError}</span>
                 )}
                 {handleStatus === 'idle' && handleInput.length === 0 && (
                   <span className="text-muted-foreground">3-15 characters, letters, numbers, and underscores</span>
@@ -400,7 +400,7 @@ export default function SettingsPage() {
 
         {/* Notifications */}
         <div className="p-4 border-b border-border">
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+          <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
             Notifications
           </h2>
           <div className="flex items-center justify-between">
@@ -441,7 +441,7 @@ export default function SettingsPage() {
 
         {/* Telegram */}
         <div className="p-4 border-b border-border">
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+          <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
             Telegram
           </h2>
           <div className="space-y-3">
@@ -471,7 +471,7 @@ export default function SettingsPage() {
                   className="p-2 hover:bg-muted rounded transition-colors"
                   title="Copy command"
                 >
-                  {telegramCopied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                  {telegramCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
                 </button>
               </div>
             </div>
@@ -493,7 +493,7 @@ export default function SettingsPage() {
         <div className="py-4 border-t border-border">
           <button
             onClick={handleClearData}
-            className="w-full flex items-center gap-3 px-4 py-3 text-red-500 hover:bg-muted/50 transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-muted/50 transition-colors"
           >
             <Trash2 className="h-5 w-5" />
             <span>Clear All Data</span>
