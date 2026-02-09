@@ -22,9 +22,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Safety timeout - if auth takes more than 10s, stop loading
+    const timeout = setTimeout(() => {
+      if (loading) {
+        console.warn('Auth timeout - forcing loading to false')
+        setLoading(false)
+      }
+    }, 10000)
+
     // Get initial session
     supabase.auth.getSession()
       .then(({ data: { session }, error }) => {
+        clearTimeout(timeout)
         if (error) {
           console.error('Session error:', error)
           setSession(null)
@@ -43,6 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       })
       .catch((err) => {
+        clearTimeout(timeout)
         console.error('Auth error:', err.message)
         setSession(null)
         setAuthUser(null)
