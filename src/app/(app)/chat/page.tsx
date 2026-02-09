@@ -463,7 +463,7 @@ export default function ChatPage() {
 
       {/* Input */}
       <div className="border-t border-border bg-card p-4 safe-bottom">
-        <div className="flex items-end gap-3">
+        <div className="flex items-center gap-3">
           <div className="flex-1 relative">
             <textarea
               ref={inputRef}
