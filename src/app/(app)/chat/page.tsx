@@ -98,15 +98,34 @@ export default function ChatPage() {
     fetchChats()
   }, [])
 
-  // Fetch greeting when chatId changes
+  // Fetch messages or greeting when chatId changes
   useEffect(() => {
-    if (!userId || userId === 'anonymous') return
+    if (!userId || userId === 'anonymous' || !chatId) return
 
-    const fetchGreeting = async () => {
+    const fetchMessages = async () => {
       setIsLoading(true)
-      setMessages([])
 
       try {
+        // First, try to fetch existing messages
+        const messagesResponse = await fetch(`/api/messages?chatId=${chatId}&limit=50`)
+
+        if (messagesResponse.ok) {
+          const messagesData = await messagesResponse.json()
+
+          if (messagesData.messages && messagesData.messages.length > 0) {
+            // We have existing messages, show them
+            setMessages(messagesData.messages.map((m: { id: string; role: 'user' | 'assistant'; content: string; timestamp: string }) => ({
+              id: m.id,
+              role: m.role,
+              content: m.content,
+              timestamp: new Date(m.timestamp),
+            })))
+            setIsLoading(false)
+            return
+          }
+        }
+
+        // No existing messages, fetch a greeting
         const response = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -122,7 +141,7 @@ export default function ChatPage() {
         if (response.ok) {
           const data = await response.json()
           // Update chatId if returned from backend
-          if (data.chatId && !chatId) {
+          if (data.chatId && data.chatId !== chatId) {
             setChatId(data.chatId)
             localStorage.setItem('bleeps_current_chat_id', data.chatId)
           }
@@ -152,7 +171,7 @@ export default function ChatPage() {
       }
     }
 
-    fetchGreeting()
+    fetchMessages()
   }, [userId, chatId, detectedTimezone])
 
   const scrollToBottom = () => {
