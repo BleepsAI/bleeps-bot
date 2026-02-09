@@ -43,7 +43,7 @@ export async function GET(request: Request) {
       const { error } = await supabase.auth.exchangeCodeForSession(code)
       if (error) {
         console.error('Code exchange error:', error)
-        return NextResponse.redirect(`${origin}/login?error=auth_failed`)
+        return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(error.message)}`)
       }
     } else if (token_hash && type) {
       const { error } = await supabase.auth.verifyOtp({
@@ -52,7 +52,7 @@ export async function GET(request: Request) {
       })
       if (error) {
         console.error('OTP verify error:', error)
-        return NextResponse.redirect(`${origin}/login?error=auth_failed`)
+        return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(error.message)}`)
       }
     }
 
