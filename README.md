@@ -89,6 +89,7 @@ SUPABASE_SERVICE_ROLE_KEY=
 NEXT_PUBLIC_SITE_URL=https://bleeps-bot.vercel.app
 OPENCLAW_GATEWAY_URL=https://bleeps-2-production.up.railway.app
 OPENCLAW_GATEWAY_TOKEN=
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=          # For push notifications
 ```
 
 ## Key Files
@@ -98,29 +99,46 @@ OPENCLAW_GATEWAY_TOKEN=
 | `/src/app/page.tsx` | Landing page |
 | `/src/app/login/page.tsx` | Magic link auth |
 | `/src/app/(app)/chat/page.tsx` | Chat interface |
+| `/src/app/(app)/settings/page.tsx` | Settings & notifications |
 | `/src/app/api/chat/route.ts` | Chat API → Railway |
 | `/src/lib/supabase.ts` | Supabase client |
 | `/src/lib/auth-context.tsx` | Auth provider |
+| `/src/lib/push-notifications.ts` | Push notification subscription |
+| `/public/sw.js` | Service worker for push |
 | `/supabase/schema.sql` | Database schema |
+
+## Features
+
+- **Reminders** — Create, list, and complete reminders with natural language
+- **Tasks** — Manage tasks with status tracking
+- **Memory** — Auto-recalls facts about you across sessions
+- **User Profiles** — Stores name, timezone, preferences
+- **Timezone Detection** — IP-based timezone detection for accurate scheduling
+- **Push Notifications** — Get notified when reminders are due (in progress)
+- **OpenClaw Personality** — Playful, emoji-friendly assistant style
 
 ## Roadmap
 
-### Phase 1: Core (Current)
+### Phase 1: Core ✅
 - [x] Web app deployed
 - [x] Backend API deployed
 - [x] Auth working
 - [x] Basic chat working
-- [ ] Core tools (reminders, tasks, notes)
+- [x] Core tools (reminders, tasks)
+- [ ] Notes
 - [ ] Price alerts
 
-### Phase 2: Intelligence
-- [ ] Memory system
+### Phase 2: Intelligence ✅
+- [x] Memory system (auto-recall)
+- [x] User profiles
+- [x] Conversation history persistence
+- [x] Timezone detection
 - [ ] Daily briefing
 - [ ] Learning system
 
-### Phase 3: Channels
+### Phase 3: Channels (In Progress)
 - [ ] Telegram bot
-- [ ] Push notifications
+- [x] Push notifications infrastructure
 - [ ] WhatsApp
 
 ### Phase 4: Integrations
