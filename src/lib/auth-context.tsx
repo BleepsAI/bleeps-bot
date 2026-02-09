@@ -68,18 +68,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   async function fetchUserProfile(userId: string) {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', userId)
-      .single()
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single()
 
-    if (error) {
-      console.error('Error fetching user profile:', error)
-    } else {
-      setUser(data as User)
+      if (error) {
+        console.error('Error fetching user profile:', error)
+        // User might not exist in users table yet - that's ok
+        setUser(null)
+      } else {
+        setUser(data as User)
+      }
+    } catch (err) {
+      console.error('fetchUserProfile error:', err)
+      setUser(null)
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   async function signIn(email: string) {
