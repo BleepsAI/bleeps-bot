@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Send, Mic, ChevronDown, Users, User, Share2 } from 'lucide-react'
+import { Send, Mic, ChevronDown, Users, User, Share2, Copy, Check } from 'lucide-react'
 
 interface Message {
   id: string
@@ -43,6 +43,7 @@ export default function ChatPage() {
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [detectedTimezone, setDetectedTimezone] = useState<string | null>(null)
+  const [copiedGroupId, setCopiedGroupId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -194,7 +195,6 @@ export default function ChatPage() {
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text)
-      alert('Invite link copied to clipboard!')
     } catch {
       // Fallback for older browsers
       const textarea = document.createElement('textarea')
@@ -203,8 +203,15 @@ export default function ChatPage() {
       textarea.select()
       document.execCommand('copy')
       document.body.removeChild(textarea)
-      alert('Invite link copied to clipboard!')
     }
+  }
+
+  const copyGroupLink = async (group: ChatInfo, e: React.MouseEvent) => {
+    e.stopPropagation()
+    const inviteUrl = `${window.location.origin}/join/${group.invite_code}`
+    await copyToClipboard(inviteUrl)
+    setCopiedGroupId(group.id)
+    setTimeout(() => setCopiedGroupId(null), 2000)
   }
 
   const sendMessage = async () => {
@@ -348,13 +355,28 @@ export default function ChatPage() {
                           )}
                         </button>
                         {group.role === 'owner' && group.invite_code && (
-                          <button
-                            onClick={(e) => shareGroup({ ...group, type: 'group' }, e)}
-                            className="p-1.5 hover:bg-background rounded-md transition-colors"
-                            aria-label={`Share ${group.name}`}
-                          >
-                            <Share2 className="h-4 w-4 text-muted-foreground" />
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={(e) => copyGroupLink({ ...group, type: 'group' }, e)}
+                              className="p-1.5 hover:bg-background rounded-md transition-colors"
+                              aria-label={`Copy invite link for ${group.name}`}
+                            >
+                              {copiedGroupId === group.id ? (
+                                <Check className="h-4 w-4 text-green-500" />
+                              ) : (
+                                <Copy className="h-4 w-4 text-muted-foreground" />
+                              )}
+                            </button>
+                            {'share' in navigator && (
+                              <button
+                                onClick={(e) => shareGroup({ ...group, type: 'group' }, e)}
+                                className="p-1.5 hover:bg-background rounded-md transition-colors"
+                                aria-label={`Share ${group.name}`}
+                              >
+                                <Share2 className="h-4 w-4 text-muted-foreground" />
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
                     ))}
