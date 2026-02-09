@@ -22,17 +22,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Race getSession against a timeout
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Auth timeout')), 5000)
-    )
-
-    Promise.race([
-      supabase.auth.getSession(),
-      timeoutPromise
-    ])
-      .then((result: any) => {
-        const { data: { session }, error } = result
+    // Get initial session
+    supabase.auth.getSession()
+      .then(({ data: { session }, error }) => {
         if (error) {
           console.error('Session error:', error)
           setSession(null)
@@ -51,7 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       })
       .catch((err) => {
-        console.error('Auth error or timeout:', err.message)
+        console.error('Auth error:', err.message)
         setSession(null)
         setAuthUser(null)
         setUser(null)
