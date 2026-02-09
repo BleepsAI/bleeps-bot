@@ -1,12 +1,12 @@
 # Bleeps
 
-Personal AI assistant for productivity and financial signals.
+Personal AI assistant that works 24/7 — reaches out when it matters.
 
 **Live:** https://bleeps-bot.vercel.app
 
 ## What Is Bleeps?
 
-A personal AI assistant that works 24/7. Not a chatbot you open — an assistant that runs in the background and reaches out when it matters.
+Not a chatbot you open — an assistant that runs in the background. Create reminders, track spending, coordinate with groups, get notified via web or Telegram.
 
 ## Status
 
@@ -14,63 +14,55 @@ A personal AI assistant that works 24/7. Not a chatbot you open — an assistant
 |-----------|--------|-----|
 | Web App | Live | https://bleeps-bot.vercel.app |
 | Backend API | Live | https://bleeps-2-production.up.railway.app |
-| Auth | Working | Supabase magic link |
-| Chat | Working | Claude API |
+| Telegram Bot | Live | @BleepsAIBot |
 
 ## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                         Users                                │
-│                    (Web / Mobile / Telegram)                 │
+│                    (Web / Telegram)                          │
 └─────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────┐
 │                    Vercel (Next.js)                          │
 │                    bleeps-bot.vercel.app                     │
-│  - Landing page & auth                                       │
-│  - Chat UI                                                   │
-│  - Settings / subscription management                        │
+│  - Chat UI with group switcher                               │
+│  - Settings (handle, push, Telegram linking)                 │
+│  - Inbox & Tasks pages                                       │
+│  - API routes for handles, groups, tasks                     │
 └─────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────┐
 │                    Railway (Express API)                     │
 │              bleeps-2-production.up.railway.app              │
 │  - Claude integration (reasoning)                            │
-│  - Tool execution                                            │
-│  - Session management                                        │
+│  - Tool execution (reminders, tasks, budget, groups)         │
+│  - Telegram webhook                                          │
+│  - Cron jobs (reminder notifications)                        │
 └─────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────┐
 │                       Supabase                               │
-│  - Users & auth                                              │
-│  - Conversation history                                      │
-│  - Reminders, tasks, notes                                   │
-│  - Price alerts, portfolio data                              │
-│  - User memory & preferences                                 │
+│  - Users & profiles (handles, Telegram linking)              │
+│  - Messages & conversation history                           │
+│  - Chats & chat members (solo + groups)                      │
+│  - Reminders, tasks, budget entries                          │
+│  - Push subscriptions                                        │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Technical Approach
+## Features
 
-Claude as the orchestrator with modular tools:
-
-- **Core Tools:** Reminders, tasks, notes
-- **Financial Tools:** Price alerts, portfolio tracking (custom built)
-- **Adapted OpenClaw Skills:** Memory, learning, daily briefing
-- **Future:** Calendar, email, third-party integrations
-
-All tools store data in Supabase, scoped per user (multi-tenant).
-
-## Pricing
-
-| Tier | Price | Messages | Reminders | Price Alerts |
-|------|-------|----------|-----------|--------------|
-| Lite | $5/mo | 150/mo | 10 | 2 |
-| Standard | $10/mo | 500/mo | 25 | 10 |
-| Pro | $20/mo | Unlimited | Unlimited | Unlimited |
-
-14-day free trial for all tiers.
+- **Chat** — Natural language interface powered by Claude
+- **Reminders** — Create, list, complete with push/Telegram notifications
+- **Tasks** — Track todos with status management
+- **Budget** — Log expenses, set category limits, view spending
+- **Groups** — Shared chats with family, roommates, teams
+- **Handles** — @username system for easy invites (bleeps.ai/@yourname)
+- **Push Notifications** — Web push for reminders and invites
+- **Telegram** — Chat via @BleepsAIBot, get notifications there too
+- **Memory** — Bleeps remembers facts about you across sessions
 
 ## Local Development
 
@@ -81,7 +73,6 @@ npm run dev    # http://localhost:3000
 
 ## Environment Variables
 
-### Vercel
 ```
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
@@ -89,62 +80,46 @@ SUPABASE_SERVICE_ROLE_KEY=
 NEXT_PUBLIC_SITE_URL=https://bleeps-bot.vercel.app
 OPENCLAW_GATEWAY_URL=https://bleeps-2-production.up.railway.app
 OPENCLAW_GATEWAY_TOKEN=
-NEXT_PUBLIC_VAPID_PUBLIC_KEY=          # For push notifications
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=
 ```
 
 ## Key Files
 
 | File | Purpose |
 |------|---------|
-| `/src/app/page.tsx` | Landing page |
-| `/src/app/login/page.tsx` | Magic link auth |
-| `/src/app/(app)/chat/page.tsx` | Chat interface |
-| `/src/app/(app)/settings/page.tsx` | Settings & notifications |
-| `/src/app/api/chat/route.ts` | Chat API → Railway |
-| `/src/lib/supabase.ts` | Supabase client |
-| `/src/lib/auth-context.tsx` | Auth provider |
-| `/src/lib/push-notifications.ts` | Push notification subscription |
-| `/public/sw.js` | Service worker for push |
-| `/supabase/schema.sql` | Database schema |
-
-## Features
-
-- **Reminders** — Create, list, and complete reminders with natural language
-- **Tasks** — Manage tasks with status tracking
-- **Memory** — Auto-recalls facts about you across sessions
-- **User Profiles** — Stores name, timezone, preferences
-- **Timezone Detection** — IP-based timezone detection for accurate scheduling
-- **Push Notifications** — Get notified when reminders are due (in progress)
-- **OpenClaw Personality** — Playful, emoji-friendly assistant style
+| `/src/app/(app)/chat/page.tsx` | Chat interface with group switcher |
+| `/src/app/(app)/settings/page.tsx` | Handle, push, Telegram settings |
+| `/src/app/(app)/inbox/page.tsx` | Reminders & notifications |
+| `/src/app/(app)/tasks/page.tsx` | Task management |
+| `/src/app/api/handle/route.ts` | Handle availability & claiming |
+| `/src/app/api/groups/route.ts` | Group operations |
+| `/src/app/api/tasks/route.ts` | Task CRUD |
+| `/src/lib/push-notifications.ts` | Push subscription management |
 
 ## Roadmap
 
 ### Phase 1: Core ✅
 - [x] Web app deployed
 - [x] Backend API deployed
-- [x] Auth working
-- [x] Basic chat working
-- [x] Core tools (reminders, tasks)
-- [ ] Notes
+- [x] Chat with Claude
+- [x] Reminders & tasks
+- [x] Memory system
+
+### Phase 2: Social ✅
+- [x] Groups (create, invite, join)
+- [x] User handles (@username)
+- [x] Push notifications
+- [x] Telegram bot integration
+
+### Phase 3: Finance (In Progress)
+- [x] Budget tracking
 - [ ] Price alerts
+- [ ] Portfolio tracking
 
-### Phase 2: Intelligence ✅
-- [x] Memory system (auto-recall)
-- [x] User profiles
-- [x] Conversation history persistence
-- [x] Timezone detection
-- [ ] Daily briefing
-- [ ] Learning system
-
-### Phase 3: Channels (In Progress)
-- [ ] Telegram bot
-- [x] Push notifications infrastructure
-- [ ] WhatsApp
-
-### Phase 4: Integrations
-- [ ] Google Calendar
-- [ ] Gmail
-- [ ] Notion
+### Phase 4: Privacy (Planned)
+- [ ] User-controlled privacy levels per chat
+- [ ] E2E encryption for Private chats
+- [ ] Wallet-based identity option
 
 ## Related Repos
 

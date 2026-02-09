@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { ChevronRight, Bell, BellOff, HelpCircle, Trash2, Copy, Check, AtSign, Loader2, Pencil, X } from 'lucide-react'
+import { ChevronRight, Bell, BellOff, HelpCircle, Trash2, Copy, Check, AtSign, Loader2, Pencil, X, Send } from 'lucide-react'
 import {
   getPushPermissionState,
   subscribeToPush,
@@ -24,6 +24,7 @@ function getAnonymousUserId(): string {
 export default function SettingsPage() {
   const [userId, setUserId] = useState<string>('anonymous')
   const [copied, setCopied] = useState(false)
+  const [telegramCopied, setTelegramCopied] = useState(false)
   const [pushState, setPushState] = useState<PushPermissionState>('default')
   const [pushEnabled, setPushEnabled] = useState(false)
   const [pushLoading, setPushLoading] = useState(false)
@@ -200,6 +201,14 @@ export default function SettingsPage() {
     navigator.clipboard.writeText(currentHandle ? `bleeps.ai/@${currentHandle}` : userId)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const telegramLinkCode = userId !== 'anonymous' ? `bleeps_${userId.slice(0, 8)}` : ''
+
+  const copyTelegramCode = () => {
+    navigator.clipboard.writeText(`/link ${telegramLinkCode}`)
+    setTelegramCopied(true)
+    setTimeout(() => setTelegramCopied(false), 2000)
   }
 
   const startEditingHandle = () => {
@@ -427,6 +436,45 @@ export default function SettingsPage() {
                 }`}
               />
             </button>
+          </div>
+        </div>
+
+        {/* Telegram */}
+        <div className="p-4 border-b border-border">
+          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            Telegram
+          </h2>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Get notifications on Telegram and chat with Bleeps directly in the app.
+            </p>
+            <div className="space-y-2">
+              <p className="text-xs font-medium">1. Open @BleepsAIBot on Telegram</p>
+              <a
+                href="https://t.me/BleepsAIBot"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-3 py-2 bg-[#0088cc] text-white rounded text-sm font-medium hover:bg-[#0077b5] transition-colors"
+              >
+                <Send className="h-4 w-4" />
+                Open Telegram Bot
+              </a>
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs font-medium">2. Send this command to link your account:</p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 bg-muted px-3 py-2 rounded text-sm font-mono">
+                  /link {telegramLinkCode}
+                </code>
+                <button
+                  onClick={copyTelegramCode}
+                  className="p-2 hover:bg-muted rounded transition-colors"
+                  title="Copy command"
+                >
+                  {telegramCopied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
