@@ -1,9 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ChevronRight, User, Bell, BellOff, Moon, MessageSquare, HelpCircle, LogOut, Copy, Check } from 'lucide-react'
-import { useAuth } from '@/lib/auth-context'
-import { TIER_LIMITS, TIER_PRICES, type SubscriptionTier } from '@/lib/supabase'
+import { ChevronRight, Bell, BellOff, HelpCircle, Trash2, Copy, Check } from 'lucide-react'
 import {
   getPushPermissionState,
   subscribeToPush,
@@ -12,42 +10,54 @@ import {
   type PushPermissionState
 } from '@/lib/push-notifications'
 
+// Get anonymous user ID from localStorage
+function getAnonymousUserId(): string {
+  if (typeof window === 'undefined') return 'anonymous'
+  let id = localStorage.getItem('bleeps_user_id')
+  if (!id || id.startsWith('anon_')) {
+    id = crypto.randomUUID()
+    localStorage.setItem('bleeps_user_id', id)
+  }
+  return id
+}
+
 export default function SettingsPage() {
-  const { user, authUser, signOut } = useAuth()
+  const [userId, setUserId] = useState<string>('anonymous')
   const [copied, setCopied] = useState(false)
   const [pushState, setPushState] = useState<PushPermissionState>('default')
   const [pushEnabled, setPushEnabled] = useState(false)
   const [pushLoading, setPushLoading] = useState(false)
 
-  const tier = (user?.subscription_tier || 'lite') as SubscriptionTier
-  const limits = TIER_LIMITS[tier]
-  const messagesUsed = user?.messages_this_month || 0
-  const messagesLimit = limits.messages === Infinity ? 'Unlimited' : limits.messages
+  // Get user ID on mount
+  useEffect(() => {
+    const id = getAnonymousUserId()
+    setUserId(id)
+  }, [])
 
   // Check push notification state on mount
   useEffect(() => {
     async function checkPush() {
-      if (!authUser?.id) return
+      if (!userId || userId === 'anonymous') return
       const state = getPushPermissionState()
       setPushState(state)
       if (state === 'granted') {
-        const { subscription } = await initializePush(authUser.id)
+        const { subscription } = await initializePush(userId)
         setPushEnabled(!!subscription)
       }
     }
     checkPush()
-  }, [authUser?.id])
+  }, [userId])
 
   const handlePushToggle = async () => {
-    if (!authUser?.id) return
+    if (!userId || userId === 'anonymous') return
     setPushLoading(true)
 
     try {
       if (pushEnabled) {
-        await unsubscribeFromPush(authUser.id)
+        await unsubscribeFromPush(userId)
         setPushEnabled(false)
       } else {
-        const subscription = await subscribeToPush(authUser.id)
+        const subscription = await subscribeToPush(userId)
         setPushEnabled(!!subscription)
         setPushState(getPushPermissionState())
       }
@@ -58,18 +68,17 @@ export default function SettingsPage() {
     }
   }
 
-  // Generate a link code for Telegram
-  const linkCode = user?.id ? `bleeps_${user.id.slice(0, 8)}` : ''
-
-  const copyLinkCode = () => {
-    navigator.clipboard.writeText(linkCode)
+  const copyUserId = () => {
+    navigator.clipboard.writeText(userId)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const handleSignOut = async () => {
-    await signOut()
-    window.location.href = '/'
+  const handleClearData = () => {
+    if (confirm('This will clear all your local data and start fresh. Are you sure?')) {
+      localStorage.clear()
+      window.location.href = '/chat'
+    }
   }
 
   return (
@@ -81,53 +90,25 @@ export default function SettingsPage() {
 
       {/* Settings list */}
       <div className="flex-1 overflow-y-auto">
-        {/* Account overview */}
-        <div className="p-4 border-b border-border">
-          <p className="text-sm text-muted-foreground">{user?.email}</p>
-          <div className="mt-3 flex items-center justify-between">
-            <div>
-              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Plan</span>
-              <p className="font-semibold capitalize">{tier} - ${TIER_PRICES[tier]}/mo</p>
-            </div>
-            <div className="text-right">
-              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Messages</span>
-              <p className="font-semibold">{messagesUsed} / {messagesLimit}</p>
-            </div>
-          </div>
-          {user?.subscription_status === 'trialing' && user?.trial_ends_at && (
-            <p className="mt-2 text-xs text-amber-600">
-              Trial ends {new Date(user.trial_ends_at).toLocaleDateString()}
-            </p>
-          )}
-        </div>
-
-        {/* Telegram linking */}
+        {/* Your ID */}
         <div className="p-4 border-b border-border">
           <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-            Connect Telegram
+            Your ID
           </h2>
-          {user?.telegram_chat_id ? (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-green-600 bg-green-600/10 px-2 py-1 rounded-full">Connected</span>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Send this code to @BleepsAIBot on Telegram:
-              </p>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 bg-muted px-3 py-2 rounded text-sm font-mono">
-                  /link {linkCode}
-                </code>
-                <button
-                  onClick={copyLinkCode}
-                  className="p-2 hover:bg-muted rounded transition-colors"
-                >
-                  {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <code className="flex-1 bg-muted px-3 py-2 rounded text-xs font-mono truncate">
+              {userId}
+            </code>
+            <button
+              onClick={copyUserId}
+              className="p-2 hover:bg-muted rounded transition-colors"
+            >
+              {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+            </button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Share this ID with friends so they can invite you to groups
+          </p>
         </div>
 
         {/* Notifications */}
@@ -150,8 +131,8 @@ export default function SettingsPage() {
                     : pushState === 'unsupported'
                     ? 'Not supported in this browser'
                     : pushEnabled
-                    ? 'Reminders will notify you'
-                    : 'Enable to get reminder alerts'}
+                    ? 'Get notified for reminders & invites'
+                    : 'Enable to get alerts'}
                 </p>
               </div>
             </div>
@@ -182,14 +163,14 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Sign out */}
+        {/* Clear data */}
         <div className="py-4 border-t border-border">
           <button
-            onClick={handleSignOut}
+            onClick={handleClearData}
             className="w-full flex items-center gap-3 px-4 py-3 text-red-500 hover:bg-muted/50 transition-colors"
           >
-            <LogOut className="h-5 w-5" />
-            <span>Sign Out</span>
+            <Trash2 className="h-5 w-5" />
+            <span>Clear All Data</span>
           </button>
         </div>
       </div>

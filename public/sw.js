@@ -36,7 +36,16 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
 
-  const url = event.notification.data?.url || '/'
+  let url = event.notification.data?.url || '/'
+
+  // Handle action button clicks
+  if (event.action === 'join') {
+    // For group invite - go to join URL
+    url = event.notification.data?.joinUrl || url
+  } else if (event.action === 'dismiss') {
+    // Just close notification
+    return
+  }
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Send, Mic, ChevronDown, Users, User, Plus } from 'lucide-react'
+import { Send, Mic, ChevronDown, Users, User, Share2 } from 'lucide-react'
 
 interface Message {
   id: string
@@ -169,6 +169,44 @@ export default function ChatPage() {
     setShowChatPicker(false)
   }
 
+  const shareGroup = async (group: ChatInfo, e: React.MouseEvent) => {
+    e.stopPropagation()
+    const inviteUrl = `${window.location.origin}/join/${group.invite_code}`
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Join ${group.name} on Bleeps`,
+          text: `You've been invited to join ${group.name}!`,
+          url: inviteUrl,
+        })
+      } catch (err) {
+        // User cancelled or share failed, fall back to clipboard
+        if ((err as Error).name !== 'AbortError') {
+          await copyToClipboard(inviteUrl)
+        }
+      }
+    } else {
+      await copyToClipboard(inviteUrl)
+    }
+  }
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      alert('Invite link copied to clipboard!')
+    } catch {
+      // Fallback for older browsers
+      const textarea = document.createElement('textarea')
+      textarea.value = text
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
+      alert('Invite link copied to clipboard!')
+    }
+  }
+
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return
 
@@ -293,19 +331,32 @@ export default function ChatPage() {
                     <div className="border-t border-border my-2" />
                     <p className="text-xs text-muted-foreground px-2 py-1">Groups</p>
                     {chats.groups.map((group) => (
-                      <button
+                      <div
                         key={group.id}
-                        onClick={() => switchChat({ ...group, type: 'group' })}
-                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors ${
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-muted transition-colors ${
                           currentChat?.id === group.id ? 'bg-muted' : ''
                         }`}
                       >
-                        <Users className="h-4 w-4" />
-                        <span className="text-sm">{group.name}</span>
-                        {group.role === 'owner' && (
-                          <span className="text-xs text-muted-foreground ml-auto">owner</span>
+                        <button
+                          onClick={() => switchChat({ ...group, type: 'group' })}
+                          className="flex-1 flex items-center gap-3"
+                        >
+                          <Users className="h-4 w-4" />
+                          <span className="text-sm">{group.name}</span>
+                          {group.role === 'owner' && (
+                            <span className="text-xs text-muted-foreground">owner</span>
+                          )}
+                        </button>
+                        {group.role === 'owner' && group.invite_code && (
+                          <button
+                            onClick={(e) => shareGroup({ ...group, type: 'group' }, e)}
+                            className="p-1.5 hover:bg-background rounded-md transition-colors"
+                            aria-label={`Share ${group.name}`}
+                          >
+                            <Share2 className="h-4 w-4 text-muted-foreground" />
+                          </button>
                         )}
-                      </button>
+                      </div>
                     ))}
                   </>
                 )}
