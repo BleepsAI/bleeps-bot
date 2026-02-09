@@ -463,8 +463,8 @@ export default function ChatPage() {
 
       {/* Input */}
       <div className="border-t border-border bg-card p-4 safe-bottom">
-        <div className="flex items-center justify-center gap-3">
-          <div className="flex-1 relative">
+        <div className="flex items-center gap-3">
+          <div className="flex-1 relative self-center">
             <textarea
               ref={inputRef}
               value={input}
@@ -488,7 +488,7 @@ export default function ChatPage() {
           <button
             onClick={sendMessage}
             disabled={!input.trim() || isLoading}
-            className="flex-shrink-0 flex items-center justify-center h-[46px] w-[46px] rounded-full bg-primary text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+            className="flex-shrink-0 self-center flex items-center justify-center h-[46px] w-[46px] rounded-full bg-primary text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
             aria-label="Send message"
           >
             <Send className="h-5 w-5" />
