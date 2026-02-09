@@ -317,8 +317,8 @@ export default function ChatPage() {
   return (
     <div className="flex flex-col h-full">
       {/* Header with Chat Switcher */}
-      <header className="flex items-center justify-between px-4 py-3 border-b border-border bg-card safe-top">
-        <div className="relative">
+      <header className="flex items-center justify-between px-4 h-14 border-b border-border bg-card safe-top">
+        <div className="relative flex items-center">
           <button
             onClick={() => setShowChatPicker(!showChatPicker)}
             className="flex items-center gap-2 text-base font-semibold hover:bg-muted px-2 py-1.5 rounded-lg transition-colors"
@@ -474,12 +474,12 @@ export default function ChatPage() {
                 ? `Message ${currentChat.name}...`
                 : "Message Bleeps..."}
               rows={1}
-              className="w-full resize-none rounded-2xl border border-border bg-muted px-4 py-3 pr-12 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-shadow"
+              className="w-full resize-none rounded-2xl border border-border bg-muted px-4 py-3 pr-12 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-shadow min-h-[46px]"
               style={{ maxHeight: '120px' }}
             />
             <button
               type="button"
-              className="absolute right-3 bottom-3 text-muted-foreground hover:text-foreground transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
               aria-label="Voice input"
             >
               <Mic className="h-5 w-5" />
@@ -488,7 +488,7 @@ export default function ChatPage() {
           <button
             onClick={sendMessage}
             disabled={!input.trim() || isLoading}
-            className="flex items-center justify-center h-11 w-11 rounded-full bg-primary text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+            className="flex-shrink-0 flex items-center justify-center h-[46px] w-[46px] rounded-full bg-primary text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
             aria-label="Send message"
           >
             <Send className="h-5 w-5" />
