@@ -1,4 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
@@ -10,17 +11,33 @@ export async function GET(request: Request) {
   const error_description = searchParams.get('error_description')
   const next = searchParams.get('next') ?? '/chat'
 
-  // Log for debugging
   console.log('Auth callback:', { code: !!code, token_hash: !!token_hash, type, error, error_description })
 
-  // If Supabase returned an error
   if (error) {
     console.error('Supabase auth error:', error, error_description)
     return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(error_description || error)}`)
   }
 
   if (code || (token_hash && type)) {
-    const supabase = await createClient()
+    const cookieStore = await cookies()
+
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value
+          },
+          set(name: string, value: string, options: CookieOptions) {
+            cookieStore.set({ name, value, ...options })
+          },
+          remove(name: string, options: CookieOptions) {
+            cookieStore.set({ name, value: '', ...options })
+          },
+        },
+      }
+    )
 
     if (code) {
       const { error } = await supabase.auth.exchangeCodeForSession(code)
@@ -42,6 +59,5 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}${next}`)
   }
 
-  // No code or token_hash, redirect to login
   return NextResponse.redirect(`${origin}/login?error=missing_code`)
 }
