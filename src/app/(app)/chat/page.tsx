@@ -24,38 +24,68 @@ function getAnonymousUserId(): string {
 
 export default function ChatPage() {
   const [userId, setUserId] = useState<string>('anonymous')
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      role: 'assistant',
-      content: "Hey! I'm Bleeps, your personal AI assistant. I can help you with reminders, tasks, research, and more. What would you like to do?",
-      timestamp: new Date(),
-    },
-  ])
+  const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [detectedTimezone, setDetectedTimezone] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
-  // Get user ID on mount
+  // Get user ID and initial greeting on mount
   useEffect(() => {
-    setUserId(getAnonymousUserId())
-  }, [])
+    const id = getAnonymousUserId()
+    setUserId(id)
 
-  // Detect timezone from IP on mount (non-blocking)
-  useEffect(() => {
-    setDetectedTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone)
+    // Get personalized greeting from backend
+    const fetchGreeting = async () => {
+      try {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+        setDetectedTimezone(tz)
 
-    fetch('https://worldtimeapi.org/api/ip', { signal: AbortSignal.timeout(3000) })
-      .then(res => res.json())
-      .then(data => {
-        if (data.timezone) {
-          setDetectedTimezone(data.timezone)
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: id,
+            messages: [{ role: 'user', content: '__greeting__' }],
+            detectedTimezone: tz,
+            isGreeting: true,
+          }),
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          setMessages([{
+            id: '1',
+            role: 'assistant',
+            content: data.content,
+            timestamp: new Date(),
+          }])
+        } else {
+          // Fallback greeting
+          setMessages([{
+            id: '1',
+            role: 'assistant',
+            content: "Hey! I'm Bleeps 👋 What can I help you with today?",
+            timestamp: new Date(),
+          }])
         }
-      })
-      .catch(() => {})
+      } catch {
+        // Fallback greeting
+        setMessages([{
+          id: '1',
+          role: 'assistant',
+          content: "Hey! I'm Bleeps 👋 What can I help you with today?",
+          timestamp: new Date(),
+        }])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchGreeting()
   }, [])
+
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
