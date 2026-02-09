@@ -1,52 +1,37 @@
 'use client'
 
-import { useState } from 'react'
-import { Bell, CheckCircle, Clock, TrendingUp } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Bell, CheckCircle, Clock, Loader2 } from 'lucide-react'
 
-type FilterType = 'all' | 'reminders' | 'tasks' | 'signals'
+type FilterType = 'all' | 'reminders' | 'tasks'
 
 interface InboxItem {
   id: string
-  type: 'reminder' | 'task' | 'signal' | 'briefing'
+  type: 'reminder' | 'task'
   title: string
   description?: string
   time: string
-  read: boolean
+  status: string
+  chatId: string
+  chatName: string
+  priority?: string
 }
 
-// Mock data - will be replaced with Supabase
-const mockItems: InboxItem[] = [
-  {
-    id: '1',
-    type: 'reminder',
-    title: 'Call with investor in 1 hour',
-    description: 'Prepare talking points for Series A discussion',
-    time: '2:00 PM',
-    read: false,
-  },
-  {
-    id: '2',
-    type: 'briefing',
-    title: 'Daily Briefing',
-    description: '3 tasks today, 2 meetings scheduled',
-    time: '8:00 AM',
-    read: true,
-  },
-  {
-    id: '3',
-    type: 'task',
-    title: 'Follow-up email sent',
-    description: 'Email to client confirmed delivered',
-    time: 'Yesterday',
-    read: true,
-  },
-]
+// Get anonymous user ID from localStorage
+function getAnonymousUserId(): string {
+  if (typeof window === 'undefined') return 'anonymous'
+  let id = localStorage.getItem('bleeps_user_id')
+  if (!id || id.startsWith('anon_')) {
+    id = crypto.randomUUID()
+    localStorage.setItem('bleeps_user_id', id)
+  }
+  return id
+}
 
 const filters: { key: FilterType; label: string }[] = [
   { key: 'all', label: 'All' },
   { key: 'reminders', label: 'Reminders' },
   { key: 'tasks', label: 'Tasks' },
-  { key: 'signals', label: 'Signals' },
 ]
 
 function getIcon(type: InboxItem['type']) {
@@ -55,32 +40,62 @@ function getIcon(type: InboxItem['type']) {
       return <Bell className="h-5 w-5" />
     case 'task':
       return <CheckCircle className="h-5 w-5" />
-    case 'signal':
-      return <TrendingUp className="h-5 w-5" />
-    case 'briefing':
-      return <Clock className="h-5 w-5" />
   }
+}
+
+function formatTime(isoString: string): string {
+  const date = new Date(isoString)
+  const now = new Date()
+  const diffMs = date.getTime() - now.getTime()
+  const diffMins = Math.round(diffMs / 60000)
+  const diffHours = Math.round(diffMs / 3600000)
+  const diffDays = Math.round(diffMs / 86400000)
+
+  // Past
+  if (diffMs < 0) {
+    if (diffMins > -60) return `${Math.abs(diffMins)}m ago`
+    if (diffHours > -24) return `${Math.abs(diffHours)}h ago`
+    if (diffDays > -7) return `${Math.abs(diffDays)}d ago`
+    return date.toLocaleDateString()
+  }
+
+  // Future
+  if (diffMins < 60) return `in ${diffMins}m`
+  if (diffHours < 24) return `in ${diffHours}h`
+  if (diffDays < 7) return `in ${diffDays}d`
+  return date.toLocaleDateString()
 }
 
 export default function InboxPage() {
   const [filter, setFilter] = useState<FilterType>('all')
-  const [items, setItems] = useState(mockItems)
+  const [items, setItems] = useState<InboxItem[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchInbox = async () => {
+      const userId = getAnonymousUserId()
+      try {
+        const response = await fetch(`/api/inbox?userId=${userId}`)
+        if (response.ok) {
+          const data = await response.json()
+          setItems(data.items || [])
+        }
+      } catch (error) {
+        console.error('Error fetching inbox:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchInbox()
+  }, [])
 
   const filteredItems = items.filter((item) => {
     if (filter === 'all') return true
-    if (filter === 'reminders') return item.type === 'reminder' || item.type === 'briefing'
+    if (filter === 'reminders') return item.type === 'reminder'
     if (filter === 'tasks') return item.type === 'task'
-    if (filter === 'signals') return item.type === 'signal'
     return true
   })
-
-  const markAsRead = (id: string) => {
-    setItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, read: true } : item))
-    )
-  }
-
-  const unreadCount = items.filter((item) => !item.read).length
 
   return (
     <div className="flex flex-col h-full">
@@ -88,14 +103,6 @@ export default function InboxPage() {
       <header className="px-4 py-3 border-b border-border safe-top">
         <div className="flex items-center justify-between mb-3">
           <h1 className="text-lg font-semibold">Inbox</h1>
-          {unreadCount > 0 && (
-            <button
-              onClick={() => setItems((prev) => prev.map((i) => ({ ...i, read: true })))}
-              className="text-sm text-primary"
-            >
-              Mark all read
-            </button>
-          )}
         </div>
 
         {/* Filters */}
@@ -118,30 +125,35 @@ export default function InboxPage() {
 
       {/* Items */}
       <div className="flex-1 overflow-y-auto">
-        {filteredItems.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-muted-foreground">
-            No items in inbox
+        {loading ? (
+          <div className="flex items-center justify-center h-full">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : filteredItems.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-4 text-center">
+            <Bell className="h-12 w-12 mb-4 opacity-50" />
+            <p className="font-medium">No items yet</p>
+            <p className="text-sm mt-1">
+              Your reminders and tasks will appear here
+            </p>
           </div>
         ) : (
           <div className="divide-y divide-border">
             {filteredItems.map((item) => (
               <div
                 key={item.id}
-                onClick={() => markAsRead(item.id)}
-                className={`flex gap-3 p-4 cursor-pointer transition-colors hover:bg-muted/50 ${
-                  !item.read ? 'bg-primary/5' : ''
-                }`}
+                className="flex gap-3 p-4 transition-colors hover:bg-muted/50"
               >
-                <div className={`mt-0.5 ${!item.read ? 'text-primary' : 'text-muted-foreground'}`}>
+                <div className="mt-0.5 text-primary">
                   {getIcon(item.type)}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className={`font-medium ${!item.read ? 'text-foreground' : ''}`}>
-                      {item.title}
-                    </span>
-                    {!item.read && (
-                      <span className="h-2 w-2 rounded-full bg-primary flex-shrink-0" />
+                    <span className="font-medium">{item.title}</span>
+                    {item.priority === 'high' && (
+                      <span className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded">
+                        High
+                      </span>
                     )}
                   </div>
                   {item.description && (
@@ -149,7 +161,16 @@ export default function InboxPage() {
                       {item.description}
                     </p>
                   )}
-                  <p className="text-xs text-muted-foreground mt-1">{item.time}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs text-muted-foreground">
+                      {formatTime(item.time)}
+                    </span>
+                    {item.chatName !== 'Personal' && (
+                      <span className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                        {item.chatName}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
