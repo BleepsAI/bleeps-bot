@@ -102,21 +102,28 @@ NEXT_PUBLIC_VAPID_PUBLIC_KEY=
 - [x] Web app deployed
 - [x] Backend API deployed
 - [x] Chat with Claude
-- [x] Reminders & tasks
+- [x] Reminders (create, list, complete, delete)
+- [x] Tasks (create, list, update, delete)
 - [x] Memory system
+- [x] Chat message persistence
 
 ### Phase 2: Social ✅
 - [x] Groups (create, invite, join)
 - [x] User handles (@username)
 - [x] Push notifications
-- [x] Telegram bot integration
+- [x] Telegram bot integration (@BleepsAIBot)
+- [x] Multi-channel notifications (web push + Telegram)
 
 ### Phase 3: Finance (In Progress)
 - [x] Budget tracking
 - [ ] Price alerts
-- [ ] Portfolio tracking
+- [ ] Daily briefing
 
-### Phase 4: Privacy (Planned)
+### Phase 4: Integrations (Planned)
+- [ ] Google Calendar
+- [ ] Stripe payments
+
+### Phase 5: Privacy (Planned)
 - [ ] User-controlled privacy levels per chat
 - [ ] E2E encryption for Private chats
 - [ ] Wallet-based identity option
