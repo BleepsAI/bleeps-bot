@@ -10,15 +10,18 @@ interface Message {
   timestamp: Date
 }
 
-// Generate or retrieve anonymous user ID
+// Generate or retrieve anonymous user ID (proper UUID format)
 function getAnonymousUserId(): string {
   if (typeof window === 'undefined') return 'anonymous'
 
   let id = localStorage.getItem('bleeps_user_id')
-  if (!id) {
-    id = 'anon_' + Math.random().toString(36).substring(2, 15)
+
+  // Migrate old-style IDs (anon_xyz) to proper UUIDs
+  if (!id || id.startsWith('anon_')) {
+    id = crypto.randomUUID()
     localStorage.setItem('bleeps_user_id', id)
   }
+
   return id
 }
 
