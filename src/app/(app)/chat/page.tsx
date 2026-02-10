@@ -489,32 +489,49 @@ export default function ChatPage() {
       </div>
 
       {/* Input */}
-      <div className="border-t border-border bg-card px-4 py-3 safe-bottom">
-        <div className="flex gap-3">
-          <div className="flex-1 flex items-center justify-center">
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={currentChat?.type === 'group'
-                ? `Message ${currentChat.name}...`
-                : "Message Bleeps..."}
-              rows={1}
-              className="w-full resize-none rounded-2xl border border-border bg-muted px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-shadow block"
-              style={{ maxHeight: '120px', verticalAlign: 'middle' }}
-            />
-          </div>
-          <div className="flex items-center justify-center">
-            <button
-              onClick={sendMessage}
-              disabled={!input.trim() || isLoading}
-              className="h-[46px] w-[46px] rounded-full bg-primary text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-opacity grid place-items-center"
-              aria-label="Send message"
-            >
-              <Send className="h-5 w-5" />
-            </button>
-          </div>
+      <div className="border-t border-border bg-card safe-bottom" style={{ padding: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minHeight: '50px' }}>
+          <textarea
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={currentChat?.type === 'group'
+              ? `Message ${currentChat.name}...`
+              : "Message Bleeps..."}
+            rows={1}
+            style={{
+              flex: 1,
+              resize: 'none',
+              borderRadius: '16px',
+              border: '1px solid var(--border)',
+              backgroundColor: 'var(--muted)',
+              padding: '12px 16px',
+              fontSize: '14px',
+              maxHeight: '120px',
+              display: 'block',
+              margin: 0
+            }}
+            className="placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-shadow"
+          />
+          <button
+            onClick={sendMessage}
+            disabled={!input.trim() || isLoading}
+            style={{
+              height: '46px',
+              width: '46px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              margin: 0
+            }}
+            className="bg-primary text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+            aria-label="Send message"
+          >
+            <Send className="h-5 w-5" />
+          </button>
         </div>
       </div>
     </div>
