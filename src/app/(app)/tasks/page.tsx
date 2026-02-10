@@ -194,7 +194,7 @@ export default function TasksPage() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <header className="flex items-center justify-between px-4 py-3 border-b border-border bg-card safe-top">
+      <header className="flex items-center justify-between px-4 h-14 border-b border-border bg-card safe-top">
         <h1 className="text-base font-semibold">Tasks</h1>
       </header>
 

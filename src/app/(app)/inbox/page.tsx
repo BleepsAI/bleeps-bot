@@ -168,13 +168,13 @@ export default function InboxPage() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <header className="px-4 py-3 border-b border-border bg-card safe-top">
-        <div className="flex items-center justify-between mb-3">
+      <header className="px-4 border-b border-border bg-card safe-top">
+        <div className="flex items-center justify-between h-14">
           <h1 className="text-base font-semibold">Inbox</h1>
         </div>
 
         {/* Filters */}
-        <div className="flex gap-1.5">
+        <div className="flex gap-1.5 pb-3">
           {filters.map((f) => (
             <button
               key={f.key}
