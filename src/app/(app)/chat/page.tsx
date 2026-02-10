@@ -489,8 +489,8 @@ export default function ChatPage() {
       </div>
 
       {/* Input */}
-      <div className="border-t border-border bg-card safe-bottom" style={{ padding: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minHeight: '50px' }}>
+      <div className="border-t border-border bg-card safe-bottom" style={{ padding: '12px 16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <textarea
             ref={inputRef}
             value={input}
@@ -504,22 +504,22 @@ export default function ChatPage() {
               flex: 1,
               resize: 'none',
               borderRadius: '16px',
-              border: '1px solid var(--border)',
+              border: '1px solid #3f3f46',
               backgroundColor: 'var(--muted)',
-              padding: '12px 16px',
+              padding: '10px 16px',
               fontSize: '14px',
               maxHeight: '120px',
               display: 'block',
               margin: 0
             }}
-            className="placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-shadow"
+            className="placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
           />
           <button
             onClick={sendMessage}
             disabled={!input.trim() || isLoading}
             style={{
-              height: '46px',
-              width: '46px',
+              height: '42px',
+              width: '42px',
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
