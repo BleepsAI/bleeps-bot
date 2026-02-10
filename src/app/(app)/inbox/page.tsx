@@ -168,18 +168,16 @@ export default function InboxPage() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <header className="px-4 border-b border-border bg-card safe-top">
-        <div className="flex items-center justify-between h-14">
-          <h1 className="text-base font-semibold">Inbox</h1>
-        </div>
+      <header className="flex items-center justify-between px-4 h-14 border-b border-border bg-card safe-top">
+        <h1 className="text-base font-semibold">Inbox</h1>
 
         {/* Filters */}
-        <div className="flex gap-1.5 pb-3">
+        <div className="flex gap-1.5">
           {filters.map((f) => (
             <button
               key={f.key}
               onClick={() => setFilter(f.key)}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+              className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
                 filter === f.key
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-muted text-muted-foreground hover:text-foreground'
