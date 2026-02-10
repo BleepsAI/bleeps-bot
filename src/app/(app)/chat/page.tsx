@@ -490,27 +490,31 @@ export default function ChatPage() {
 
       {/* Input */}
       <div className="border-t border-border bg-card px-4 py-3 safe-bottom">
-        <div className="grid grid-cols-[1fr_auto] gap-3 items-center">
-          <textarea
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={currentChat?.type === 'group'
-              ? `Message ${currentChat.name}...`
-              : "Message Bleeps..."}
-            rows={1}
-            className="w-full resize-none rounded-2xl border border-border bg-muted px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-shadow"
-            style={{ maxHeight: '120px' }}
-          />
-          <button
-            onClick={sendMessage}
-            disabled={!input.trim() || isLoading}
-            className="h-[46px] w-[46px] rounded-full bg-primary text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-opacity grid place-items-center"
-            aria-label="Send message"
-          >
-            <Send className="h-5 w-5" />
-          </button>
+        <div className="flex gap-3">
+          <div className="flex-1 flex items-center justify-center">
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={currentChat?.type === 'group'
+                ? `Message ${currentChat.name}...`
+                : "Message Bleeps..."}
+              rows={1}
+              className="w-full resize-none rounded-2xl border border-border bg-muted px-4 py-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-shadow block"
+              style={{ maxHeight: '120px', verticalAlign: 'middle' }}
+            />
+          </div>
+          <div className="flex items-center justify-center">
+            <button
+              onClick={sendMessage}
+              disabled={!input.trim() || isLoading}
+              className="h-[46px] w-[46px] rounded-full bg-primary text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-opacity grid place-items-center"
+              aria-label="Send message"
+            >
+              <Send className="h-5 w-5" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
