@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { ChevronRight, Bell, BellOff, HelpCircle, Trash2, Copy, Check, AtSign, Loader2, Pencil, X, Send } from 'lucide-react'
+import { ChevronRight, Bell, BellOff, HelpCircle, Trash2, Copy, Check, AtSign, Loader2, Pencil, X, Send, Sun } from 'lucide-react'
 import {
   getPushPermissionState,
   subscribeToPush,
@@ -37,6 +37,11 @@ export default function SettingsPage() {
   const [claiming, setClaiming] = useState(false)
   const [handleLoading, setHandleLoading] = useState(true)
   const [isEditingHandle, setIsEditingHandle] = useState(false)
+
+  // Daily briefing state
+  const [briefingEnabled, setBriefingEnabled] = useState(false)
+  const [briefingTime, setBriefingTime] = useState('08:00')
+  const [briefingLoading, setBriefingLoading] = useState(false)
 
   // Get user ID on mount
   useEffect(() => {
@@ -79,6 +84,60 @@ export default function SettingsPage() {
     }
     checkPush()
   }, [userId])
+
+  // Fetch daily briefing preferences
+  useEffect(() => {
+    async function fetchBriefing() {
+      if (!userId || userId === 'anonymous') return
+      try {
+        const response = await fetch(`/api/briefing?userId=${userId}`)
+        if (response.ok) {
+          const data = await response.json()
+          setBriefingEnabled(data.enabled)
+          setBriefingTime(data.time?.slice(0, 5) || '08:00')
+        }
+      } catch (error) {
+        console.error('Error fetching briefing prefs:', error)
+      }
+    }
+    fetchBriefing()
+  }, [userId])
+
+  const handleBriefingToggle = async () => {
+    if (!userId || userId === 'anonymous') return
+    setBriefingLoading(true)
+    const newEnabled = !briefingEnabled
+
+    try {
+      const response = await fetch('/api/briefing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, enabled: newEnabled })
+      })
+      if (response.ok) {
+        setBriefingEnabled(newEnabled)
+      }
+    } catch (error) {
+      console.error('Error toggling briefing:', error)
+    } finally {
+      setBriefingLoading(false)
+    }
+  }
+
+  const handleBriefingTimeChange = async (newTime: string) => {
+    if (!userId || userId === 'anonymous') return
+    setBriefingTime(newTime)
+
+    try {
+      await fetch('/api/briefing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, time: newTime })
+      })
+    } catch (error) {
+      console.error('Error updating briefing time:', error)
+    }
+  }
 
   // Debounced handle availability check
   const checkHandle = useCallback(async (value: string) => {
@@ -436,6 +495,56 @@ export default function SettingsPage() {
                 }`}
               />
             </button>
+          </div>
+        </div>
+
+        {/* Daily Briefing */}
+        <div className="p-4 border-b border-border">
+          <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+            Daily Briefing
+          </h2>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Sun className={`h-5 w-5 ${briefingEnabled ? 'text-primary' : 'text-muted-foreground'}`} />
+                <div>
+                  <p className="font-medium">Morning Summary</p>
+                  <p className="text-xs text-muted-foreground">
+                    {briefingEnabled
+                      ? `Daily at ${briefingTime}`
+                      : 'Get a summary of your day each morning'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleBriefingToggle}
+                disabled={briefingLoading}
+                className={`relative w-12 h-7 rounded-full transition-colors ${
+                  briefingEnabled ? 'bg-primary' : 'bg-muted'
+                }`}
+              >
+                <span
+                  className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                    briefingEnabled ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {briefingEnabled && (
+              <div className="flex items-center gap-3 pl-8">
+                <label htmlFor="briefing-time" className="text-sm text-muted-foreground">
+                  Send at:
+                </label>
+                <input
+                  id="briefing-time"
+                  type="time"
+                  value={briefingTime}
+                  onChange={(e) => handleBriefingTimeChange(e.target.value)}
+                  className="bg-muted border border-border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+            )}
           </div>
         </div>
 
