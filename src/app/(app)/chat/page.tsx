@@ -490,36 +490,40 @@ export default function ChatPage() {
 
       {/* Input */}
       <div className="border-t border-border bg-card p-4 safe-bottom">
-        <div className="flex items-center gap-3">
-          <div className="flex-1 relative self-center">
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={currentChat?.type === 'group'
-                ? `Message ${currentChat.name}...`
-                : "Message Bleeps..."}
-              rows={1}
-              className="w-full resize-none rounded-2xl border border-border bg-muted px-4 py-3 pr-12 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-shadow align-middle"
-              style={{ maxHeight: '120px' }}
-            />
+        <div className="flex gap-3">
+          <div className="flex-1 flex items-center">
+            <div className="relative w-full">
+              <textarea
+                ref={inputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={currentChat?.type === 'group'
+                  ? `Message ${currentChat.name}...`
+                  : "Message Bleeps..."}
+                rows={1}
+                className="w-full resize-none rounded-2xl border border-border bg-muted px-4 py-3 pr-12 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-shadow"
+                style={{ maxHeight: '120px' }}
+              />
+              <button
+                type="button"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Voice input"
+              >
+                <Mic className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+          <div className="flex items-center">
             <button
-              type="button"
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-              aria-label="Voice input"
+              onClick={sendMessage}
+              disabled={!input.trim() || isLoading}
+              className="flex-shrink-0 flex items-center justify-center h-[46px] w-[46px] rounded-full bg-primary text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
+              aria-label="Send message"
             >
-              <Mic className="h-5 w-5" />
+              <Send className="h-5 w-5" />
             </button>
           </div>
-          <button
-            onClick={sendMessage}
-            disabled={!input.trim() || isLoading}
-            className="flex-shrink-0 self-center flex items-center justify-center h-[46px] w-[46px] rounded-full bg-primary text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
-            aria-label="Send message"
-          >
-            <Send className="h-5 w-5" />
-          </button>
         </div>
       </div>
     </div>
