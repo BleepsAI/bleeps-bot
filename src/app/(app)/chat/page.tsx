@@ -8,6 +8,9 @@ interface Message {
   role: 'user' | 'assistant'
   content: string
   timestamp: Date
+  senderId?: string
+  senderName?: string
+  isOwnMessage?: boolean
 }
 
 interface ChatInfo {
@@ -107,18 +110,21 @@ export default function ChatPage() {
 
       try {
         // First, try to fetch existing messages
-        const messagesResponse = await fetch(`/api/messages?chatId=${chatId}&limit=50`)
+        const messagesResponse = await fetch(`/api/messages?chatId=${chatId}&limit=50&userId=${userId}`)
 
         if (messagesResponse.ok) {
           const messagesData = await messagesResponse.json()
 
           if (messagesData.messages && messagesData.messages.length > 0) {
             // We have existing messages, show them
-            setMessages(messagesData.messages.map((m: { id: string; role: 'user' | 'assistant'; content: string; timestamp: string }) => ({
+            setMessages(messagesData.messages.map((m: { id: string; role: 'user' | 'assistant'; content: string; timestamp: string; senderId?: string; senderName?: string; isOwnMessage?: boolean }) => ({
               id: m.id,
               role: m.role,
               content: m.content,
               timestamp: new Date(m.timestamp),
+              senderId: m.senderId,
+              senderName: m.senderName,
+              isOwnMessage: m.isOwnMessage,
             })))
             setIsLoading(false)
             return
@@ -431,22 +437,43 @@ export default function ChatPage() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
+        {messages.map((message, index) => {
+          // Show sender name in group chats for user messages that aren't from the current user
+          const showSenderName = currentChat?.type === 'group' &&
+            message.role === 'user' &&
+            !message.isOwnMessage &&
+            message.senderName
+
+          // Check if previous message was from the same sender (to avoid repeating names)
+          const prevMessage = messages[index - 1]
+          const sameSenderAsPrev = prevMessage &&
+            prevMessage.role === 'user' &&
+            prevMessage.senderId === message.senderId
+
+          return (
             <div
-              className={`max-w-[85%] rounded-2xl px-4 py-2.5 ${
-                message.role === 'user'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted'
-              }`}
+              key={message.id}
+              className={`flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'}`}
             >
-              <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+              {showSenderName && !sameSenderAsPrev && (
+                <span className="text-xs text-muted-foreground mb-1 px-1">
+                  {message.senderName}
+                </span>
+              )}
+              <div
+                className={`max-w-[85%] rounded-2xl px-4 py-2.5 ${
+                  message.role === 'user'
+                    ? message.isOwnMessage !== false
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-blue-600/80 text-white'
+                    : 'bg-muted'
+                }`}
+              >
+                <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
         {isLoading && messages.length > 0 && (
           <div className="flex justify-start">
             <div className="bg-muted rounded-2xl px-4 py-3">
