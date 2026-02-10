@@ -490,8 +490,8 @@ export default function ChatPage() {
 
       {/* Input */}
       <div className="border-t border-border bg-card p-4 safe-bottom">
-        <div className="flex gap-3 items-center min-h-[56px]">
-          <div className="flex-1 relative">
+        <div className="flex gap-3 items-center">
+          <div className="flex-1 relative h-[46px]">
             <textarea
               ref={inputRef}
               value={input}
@@ -501,12 +501,12 @@ export default function ChatPage() {
                 ? `Message ${currentChat.name}...`
                 : "Message Bleeps..."}
               rows={1}
-              className="w-full resize-none rounded-2xl border border-border bg-muted px-4 py-3 pr-12 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-shadow"
+              className="absolute inset-0 w-full resize-none rounded-2xl border border-border bg-muted px-4 py-3 pr-12 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-shadow"
               style={{ maxHeight: '120px' }}
             />
             <button
               type="button"
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors z-10"
               aria-label="Voice input"
             >
               <Mic className="h-5 w-5" />
