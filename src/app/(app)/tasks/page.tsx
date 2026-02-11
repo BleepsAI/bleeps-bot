@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Circle, CheckCircle2, Loader2, ListTodo, MoreVertical, Pencil, Trash2, X, Check } from 'lucide-react'
+import { useAuth } from '@/lib/auth-context'
 
 interface Task {
   id: string
@@ -10,17 +11,6 @@ interface Task {
   completed: boolean
   dueDate?: string
   createdAt: string
-}
-
-// Get anonymous user ID from localStorage
-function getAnonymousUserId(): string {
-  if (typeof window === 'undefined') return 'anonymous'
-  let id = localStorage.getItem('bleeps_user_id')
-  if (!id || id.startsWith('anon_')) {
-    id = crypto.randomUUID()
-    localStorage.setItem('bleeps_user_id', id)
-  }
-  return id
 }
 
 function getSection(task: Task): 'today' | 'tomorrow' | 'upcoming' | 'completed' | 'no-date' {
@@ -61,6 +51,8 @@ const sections = [
 ] as const
 
 export default function TasksPage() {
+  const { authUser } = useAuth()
+  const userId = authUser?.id
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
@@ -69,8 +61,8 @@ export default function TasksPage() {
   const editInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
+    if (!userId) return
     const fetchTasks = async () => {
-      const userId = getAnonymousUserId()
       try {
         const response = await fetch(`/api/tasks?userId=${userId}`)
         if (response.ok) {
@@ -85,7 +77,7 @@ export default function TasksPage() {
     }
 
     fetchTasks()
-  }, [])
+  }, [userId])
 
   useEffect(() => {
     if (editingId && editInputRef.current) {

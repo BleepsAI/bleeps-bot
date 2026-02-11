@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Bell, CheckCircle, Loader2, MoreVertical, Pencil, Trash2, X, Check } from 'lucide-react'
+import { useAuth } from '@/lib/auth-context'
 
 type FilterType = 'all' | 'reminders' | 'tasks'
 
@@ -13,17 +14,6 @@ interface InboxItem {
   time: string
   status: string
   chatName: string
-}
-
-// Get anonymous user ID from localStorage
-function getAnonymousUserId(): string {
-  if (typeof window === 'undefined') return 'anonymous'
-  let id = localStorage.getItem('bleeps_user_id')
-  if (!id || id.startsWith('anon_')) {
-    id = crypto.randomUUID()
-    localStorage.setItem('bleeps_user_id', id)
-  }
-  return id
 }
 
 const filters: { key: FilterType; label: string }[] = [
@@ -65,6 +55,8 @@ function formatTime(isoString: string): string {
 }
 
 export default function InboxPage() {
+  const { authUser } = useAuth()
+  const userId = authUser?.id
   const [filter, setFilter] = useState<FilterType>('all')
   const [items, setItems] = useState<InboxItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -74,8 +66,8 @@ export default function InboxPage() {
   const editInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
+    if (!userId) return
     const fetchInbox = async () => {
-      const userId = getAnonymousUserId()
       try {
         const response = await fetch(`/api/inbox?userId=${userId}`)
         if (response.ok) {
@@ -90,7 +82,7 @@ export default function InboxPage() {
     }
 
     fetchInbox()
-  }, [])
+  }, [userId])
 
   useEffect(() => {
     if (editingId && editInputRef.current) {

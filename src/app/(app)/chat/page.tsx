@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Send, Mic, ChevronDown, Users, User, Share2, Copy, Check } from 'lucide-react'
+import { useAuth } from '@/lib/auth-context'
 
 interface Message {
   id: string
@@ -21,23 +22,9 @@ interface ChatInfo {
   invite_code?: string
 }
 
-// Generate or retrieve anonymous user ID (proper UUID format)
-function getAnonymousUserId(): string {
-  if (typeof window === 'undefined') return 'anonymous'
-
-  let id = localStorage.getItem('bleeps_user_id')
-
-  // Migrate old-style IDs (anon_xyz) to proper UUIDs
-  if (!id || id.startsWith('anon_')) {
-    id = crypto.randomUUID()
-    localStorage.setItem('bleeps_user_id', id)
-  }
-
-  return id
-}
-
 export default function ChatPage() {
-  const [userId, setUserId] = useState<string>('anonymous')
+  const { authUser } = useAuth()
+  const userId = authUser?.id || 'anonymous'
   const [chatId, setChatId] = useState<string | null>(null)
   const [currentChat, setCurrentChat] = useState<ChatInfo | null>(null)
   const [chats, setChats] = useState<{ solo: ChatInfo | null; groups: ChatInfo[] }>({ solo: null, groups: [] })
@@ -50,18 +37,17 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
-  // Get user ID and fetch chats on mount
+  // Fetch chats on mount
   useEffect(() => {
-    const id = getAnonymousUserId()
-    setUserId(id)
-
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
     setDetectedTimezone(tz)
+
+    if (!userId || userId === 'anonymous') return
 
     // Fetch user's chats
     const fetchChats = async () => {
       try {
-        const response = await fetch(`/api/groups?userId=${id}`)
+        const response = await fetch(`/api/groups?userId=${userId}`)
         if (response.ok) {
           const data = await response.json()
           setChats({
@@ -99,7 +85,7 @@ export default function ChatPage() {
     }
 
     fetchChats()
-  }, [])
+  }, [userId])
 
   // Fetch messages or greeting when chatId changes
   useEffect(() => {

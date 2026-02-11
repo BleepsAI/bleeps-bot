@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { ChevronRight, Bell, BellOff, HelpCircle, Trash2, Copy, Check, AtSign, Loader2, Pencil, X, Send, Sun, Moon } from 'lucide-react'
+import { ChevronRight, Bell, BellOff, HelpCircle, Trash2, Copy, Check, AtSign, Loader2, Pencil, X, Send, Sun, Moon, LogOut } from 'lucide-react'
 import { useTheme } from '@/lib/theme-context'
+import { useAuth } from '@/lib/auth-context'
 import {
   getPushPermissionState,
   subscribeToPush,
@@ -11,20 +12,10 @@ import {
   type PushPermissionState
 } from '@/lib/push-notifications'
 
-// Get anonymous user ID from localStorage
-function getAnonymousUserId(): string {
-  if (typeof window === 'undefined') return 'anonymous'
-  let id = localStorage.getItem('bleeps_user_id')
-  if (!id || id.startsWith('anon_')) {
-    id = crypto.randomUUID()
-    localStorage.setItem('bleeps_user_id', id)
-  }
-  return id
-}
-
 export default function SettingsPage() {
+  const { authUser, signOut } = useAuth()
+  const userId = authUser?.id
   const { theme, toggleTheme } = useTheme()
-  const [userId, setUserId] = useState<string>('anonymous')
   const [copied, setCopied] = useState(false)
   const [telegramCopied, setTelegramCopied] = useState(false)
   const [pushState, setPushState] = useState<PushPermissionState>('default')
@@ -45,16 +36,10 @@ export default function SettingsPage() {
   const [briefingTime, setBriefingTime] = useState('08:00')
   const [briefingLoading, setBriefingLoading] = useState(false)
 
-  // Get user ID on mount
-  useEffect(() => {
-    const id = getAnonymousUserId()
-    setUserId(id)
-  }, [])
-
   // Fetch current handle on mount
   useEffect(() => {
     async function fetchHandle() {
-      if (!userId || userId === 'anonymous') return
+      if (!userId) return
       try {
         const response = await fetch(`/api/handle?userId=${userId}`)
         if (response.ok) {
@@ -76,7 +61,7 @@ export default function SettingsPage() {
   // Check push notification state on mount
   useEffect(() => {
     async function checkPush() {
-      if (!userId || userId === 'anonymous') return
+      if (!userId) return
       const state = getPushPermissionState()
       setPushState(state)
       if (state === 'granted') {
@@ -90,7 +75,7 @@ export default function SettingsPage() {
   // Fetch daily briefing preferences
   useEffect(() => {
     async function fetchBriefing() {
-      if (!userId || userId === 'anonymous') return
+      if (!userId) return
       try {
         const response = await fetch(`/api/briefing?userId=${userId}`)
         if (response.ok) {
@@ -106,7 +91,7 @@ export default function SettingsPage() {
   }, [userId])
 
   const handleBriefingToggle = async () => {
-    if (!userId || userId === 'anonymous') return
+    if (!userId) return
     setBriefingLoading(true)
     const newEnabled = !briefingEnabled
 
@@ -127,7 +112,7 @@ export default function SettingsPage() {
   }
 
   const handleBriefingTimeChange = async (newTime: string) => {
-    if (!userId || userId === 'anonymous') return
+    if (!userId) return
     setBriefingTime(newTime)
 
     try {
@@ -239,7 +224,7 @@ export default function SettingsPage() {
   }
 
   const handlePushToggle = async () => {
-    if (!userId || userId === 'anonymous') return
+    if (!userId) return
     setPushLoading(true)
 
     try {
@@ -259,12 +244,12 @@ export default function SettingsPage() {
   }
 
   const copyHandle = () => {
-    navigator.clipboard.writeText(currentHandle ? `bleeps.ai/@${currentHandle}` : userId)
+    navigator.clipboard.writeText(currentHandle ? `bleeps.ai/@${currentHandle}` : (userId || ''))
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const telegramLinkCode = userId !== 'anonymous' ? `bleeps_${userId.slice(0, 8)}` : ''
+  const telegramLinkCode = userId ? `bleeps_${userId.slice(0, 8)}` : ''
 
   const copyTelegramCode = () => {
     navigator.clipboard.writeText(`/link ${telegramLinkCode}`)
@@ -634,8 +619,15 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Clear data */}
+        {/* Sign out & Clear data */}
         <div className="py-4 border-t border-border">
+          <button
+            onClick={signOut}
+            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors"
+          >
+            <LogOut className="h-5 w-5" />
+            <span>Sign Out</span>
+          </button>
           <button
             onClick={handleClearData}
             className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-muted/50 transition-colors"
