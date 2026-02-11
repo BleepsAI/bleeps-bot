@@ -391,7 +391,7 @@ export default function ChatPage() {
   return (
     <div className="flex flex-col h-full">
       {/* Header with Chat Switcher */}
-      <header className="flex items-center justify-between px-4 h-14 border-b border-border bg-background safe-top">
+      <header className="flex-shrink-0 flex items-center justify-between px-4 h-14 border-b border-border bg-background safe-top">
         <div className="relative flex items-center gap-1">
           <span className="text-base font-semibold">Bleeps</span>
           <button

@@ -186,7 +186,7 @@ export default function TasksPage() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <header className="flex items-center justify-between px-4 h-14 border-b border-border bg-background safe-top">
+      <header className="flex-shrink-0 flex items-center justify-between px-4 h-14 border-b border-border bg-background safe-top">
         <div className="flex items-center gap-2">
           <span className="text-base font-semibold">Bleeps</span>
           <span className="text-base text-muted-foreground">Tasks</span>

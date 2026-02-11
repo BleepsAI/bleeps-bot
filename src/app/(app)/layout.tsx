@@ -19,14 +19,14 @@ export default function AppLayout({
   const pathname = usePathname()
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-screen-safe">
       {/* Main content */}
-      <main className="flex-1 overflow-hidden">
+      <main className="flex-1-safe overflow-hidden">
         {children}
       </main>
 
       {/* Bottom tab bar */}
-      <nav className="flex h-14 border-t border-border bg-background safe-bottom">
+      <nav className="flex-shrink-0 flex h-14 border-t border-border bg-background safe-bottom">
         {tabs.map((tab) => {
           const isActive = pathname === tab.href
           const Icon = tab.icon
