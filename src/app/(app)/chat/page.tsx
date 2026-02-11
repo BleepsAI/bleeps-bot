@@ -667,7 +667,7 @@ export default function ChatPage() {
                       : 'bg-card text-foreground'
                 }`}
               >
-                <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
               </div>
             </div>
           )
@@ -705,7 +705,7 @@ export default function ChatPage() {
               border: '1px solid #3f3f46',
               backgroundColor: 'var(--muted)',
               padding: '10px 16px',
-              fontSize: '14px',
+              fontSize: '16px',
               maxHeight: '120px',
               display: 'block',
               margin: 0
