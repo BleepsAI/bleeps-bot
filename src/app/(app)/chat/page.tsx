@@ -667,7 +667,7 @@ export default function ChatPage() {
                       : 'bg-card text-foreground'
                 }`}
               >
-                <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                <p className="whitespace-pre-wrap leading-normal">{message.content}</p>
               </div>
             </div>
           )
