@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { ChevronRight, Bell, BellOff, HelpCircle, Trash2, Copy, Check, AtSign, Loader2, Pencil, X, Send, Sun } from 'lucide-react'
+import { ChevronRight, Bell, BellOff, HelpCircle, Trash2, Copy, Check, AtSign, Loader2, Pencil, X, Send, Sun, Moon } from 'lucide-react'
+import { useTheme } from '@/lib/theme-context'
 import {
   getPushPermissionState,
   subscribeToPush,
@@ -22,6 +23,7 @@ function getAnonymousUserId(): string {
 }
 
 export default function SettingsPage() {
+  const { theme, toggleTheme } = useTheme()
   const [userId, setUserId] = useState<string>('anonymous')
   const [copied, setCopied] = useState(false)
   const [telegramCopied, setTelegramCopied] = useState(false)
@@ -545,6 +547,40 @@ export default function SettingsPage() {
                 />
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Appearance */}
+        <div className="p-4 border-b border-border">
+          <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+            Appearance
+          </h2>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {theme === 'dark' ? (
+                <Moon className="h-5 w-5 text-primary" />
+              ) : (
+                <Sun className="h-5 w-5 text-primary" />
+              )}
+              <div>
+                <p className="font-medium">{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</p>
+                <p className="text-xs text-muted-foreground">
+                  {theme === 'dark' ? 'Easy on the eyes' : 'Bright and clean'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={toggleTheme}
+              className={`relative w-12 h-7 rounded-full transition-colors ${
+                theme === 'dark' ? 'bg-primary' : 'bg-muted'
+              }`}
+            >
+              <span
+                className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                  theme === 'dark' ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
           </div>
         </div>
 
