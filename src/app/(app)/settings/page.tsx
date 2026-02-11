@@ -480,8 +480,8 @@ export default function SettingsPage() {
               } ${(pushState === 'denied' || pushState === 'unsupported') ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <span
-                className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                  pushEnabled ? 'translate-x-5' : 'translate-x-0'
+                className={`absolute top-1 left-1 w-5 h-5 rounded-full shadow transition-all ${
+                  pushEnabled ? 'translate-x-5 bg-zinc-800' : 'translate-x-0 bg-white'
                 }`}
               />
             </button>
@@ -514,8 +514,8 @@ export default function SettingsPage() {
                 }`}
               >
                 <span
-                  className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                    briefingEnabled ? 'translate-x-5' : 'translate-x-0'
+                  className={`absolute top-1 left-1 w-5 h-5 rounded-full shadow transition-all ${
+                    briefingEnabled ? 'translate-x-5 bg-zinc-800' : 'translate-x-0 bg-white'
                   }`}
                 />
               </button>
@@ -564,8 +564,8 @@ export default function SettingsPage() {
               }`}
             >
               <span
-                className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                  theme === 'dark' ? 'translate-x-5' : 'translate-x-0'
+                className={`absolute top-1 left-1 w-5 h-5 rounded-full shadow transition-all ${
+                  theme === 'dark' ? 'translate-x-5 bg-zinc-800' : 'translate-x-0 bg-white'
                 }`}
               />
             </button>
