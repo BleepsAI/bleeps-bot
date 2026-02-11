@@ -635,35 +635,40 @@ export default function ChatPage() {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
         {messages.map((message, index) => {
-          // Show sender name in group chats for user messages that aren't from the current user
-          const showSenderName = currentChat?.type === 'group' &&
-            message.role === 'user' &&
-            !message.isOwnMessage &&
-            message.senderName
+          const isOwnMessage = message.role === 'user' && message.isOwnMessage !== false
+          const isOtherUser = message.role === 'user' && message.isOwnMessage === false
+          const isBleeps = message.role === 'assistant'
+
+          // Show sender name in group chats for Bleeps and other users (not your own messages)
+          const showSenderName = currentChat?.type === 'group' && !isOwnMessage
 
           // Check if previous message was from the same sender (to avoid repeating names)
           const prevMessage = messages[index - 1]
-          const sameSenderAsPrev = prevMessage &&
-            prevMessage.role === 'user' &&
-            prevMessage.senderId === message.senderId
+          const sameSenderAsPrev = prevMessage && (
+            (isBleeps && prevMessage.role === 'assistant') ||
+            (isOtherUser && prevMessage.role === 'user' && prevMessage.senderId === message.senderId)
+          )
+
+          // Alignment: your messages right, everyone else left
+          const alignRight = isOwnMessage
 
           return (
             <div
               key={message.id}
-              className={`flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'}`}
+              className={`flex flex-col ${alignRight ? 'items-end' : 'items-start'}`}
             >
               {showSenderName && !sameSenderAsPrev && (
                 <span className="text-xs text-muted-foreground mb-1 px-1">
-                  {message.senderName}
+                  {isBleeps ? 'Bleeps' : message.senderName}
                 </span>
               )}
               <div
                 className={`max-w-[85%] rounded-2xl px-4 py-2.5 ${
-                  message.role === 'user'
-                    ? message.isOwnMessage !== false
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-blue-600/80 text-white'
-                    : 'bg-muted'
+                  isOwnMessage
+                    ? 'bg-primary text-primary-foreground'
+                    : isBleeps
+                      ? 'bg-indigo-500/20 text-foreground'
+                      : 'bg-muted text-foreground'
                 }`}
               >
                 <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>

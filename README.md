@@ -2,7 +2,7 @@
 
 Personal AI assistant that works 24/7 — reaches out when it matters.
 
-**Live:** https://bleeps-bot.vercel.app
+**Live:** https://bleeps.ai
 
 ## What Is Bleeps?
 
@@ -12,7 +12,7 @@ Not a chatbot you open — an assistant that runs in the background. Create remi
 
 | Component | Status | URL |
 |-----------|--------|-----|
-| Web App | Live | https://bleeps-bot.vercel.app |
+| Web App | Live | https://bleeps.ai |
 | Backend API | Live | https://bleeps-2-production.up.railway.app |
 | Telegram Bot | Live | @BleepsAIBot |
 
@@ -26,11 +26,11 @@ Not a chatbot you open — an assistant that runs in the background. Create remi
                               ↓
 ┌─────────────────────────────────────────────────────────────┐
 │                    Vercel (Next.js)                          │
-│                    bleeps-bot.vercel.app                     │
+│                        bleeps.ai                             │
+│  - Auth (Google OAuth + magic link via Supabase)             │
 │  - Chat UI with group switcher                               │
 │  - Settings (handle, push, Telegram linking)                 │
 │  - Inbox & Tasks pages                                       │
-│  - API routes for handles, groups, tasks                     │
 └─────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────┐
@@ -44,7 +44,7 @@ Not a chatbot you open — an assistant that runs in the background. Create remi
                               ↓
 ┌─────────────────────────────────────────────────────────────┐
 │                       Supabase                               │
-│  - Users & profiles (handles, Telegram linking)              │
+│  - Users & auth (Google OAuth + magic link)                  │
 │  - Messages & conversation history                           │
 │  - Chats & chat members (solo + groups)                      │
 │  - Reminders, tasks, budget entries                          │
@@ -59,10 +59,15 @@ Not a chatbot you open — an assistant that runs in the background. Create remi
 - **Tasks** — Track todos with status management
 - **Budget** — Log expenses, set category limits, view spending
 - **Groups** — Shared chats with family, roommates, teams
+- **Group Settings** — Edit group name, delete group
 - **Handles** — @username system for easy invites (bleeps.ai/@yourname)
 - **Push Notifications** — Web push for reminders and invites
 - **Telegram** — Chat via @BleepsAIBot, get notifications there too
 - **Memory** — Bleeps remembers facts about you across sessions
+- **Daily Briefing** — Morning summary with weather, reminders, tasks
+- **Weather** — Get weather for your location
+- **URL Summarization** — Summarize articles and web pages
+- **Light/Dark Theme** — Toggle in settings
 
 ## Local Development
 
@@ -77,7 +82,7 @@ npm run dev    # http://localhost:3000
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
-NEXT_PUBLIC_SITE_URL=https://bleeps-bot.vercel.app
+NEXT_PUBLIC_SITE_URL=https://bleeps.ai
 OPENCLAW_GATEWAY_URL=https://bleeps-2-production.up.railway.app
 OPENCLAW_GATEWAY_TOKEN=
 NEXT_PUBLIC_VAPID_PUBLIC_KEY=
@@ -88,12 +93,15 @@ NEXT_PUBLIC_VAPID_PUBLIC_KEY=
 | File | Purpose |
 |------|---------|
 | `/src/app/(app)/chat/page.tsx` | Chat interface with group switcher |
-| `/src/app/(app)/settings/page.tsx` | Handle, push, Telegram settings |
+| `/src/app/(app)/settings/page.tsx` | Handle, push, Telegram, theme settings |
 | `/src/app/(app)/inbox/page.tsx` | Reminders & notifications |
 | `/src/app/(app)/tasks/page.tsx` | Task management |
 | `/src/app/api/handle/route.ts` | Handle availability & claiming |
-| `/src/app/api/groups/route.ts` | Group operations |
+| `/src/app/api/groups/route.ts` | Group operations (CRUD) |
 | `/src/app/api/tasks/route.ts` | Task CRUD |
+| `/src/lib/supabase/middleware.ts` | Auth session management |
+| `/src/lib/auth-context.tsx` | Auth state provider |
+| `/src/lib/theme-context.tsx` | Theme state provider |
 | `/src/lib/push-notifications.ts` | Push subscription management |
 
 ## Roadmap
@@ -101,6 +109,8 @@ NEXT_PUBLIC_VAPID_PUBLIC_KEY=
 ### Phase 1: Core ✅
 - [x] Web app deployed
 - [x] Backend API deployed
+- [x] Auth (Google OAuth + magic link)
+- [x] Custom domain (bleeps.ai)
 - [x] Chat with Claude
 - [x] Reminders (create, list, complete, delete)
 - [x] Tasks (create, list, update, delete)
@@ -109,17 +119,20 @@ NEXT_PUBLIC_VAPID_PUBLIC_KEY=
 
 ### Phase 2: Social ✅
 - [x] Groups (create, invite, join)
+- [x] Group settings (edit name, delete)
 - [x] User handles (@username)
 - [x] Push notifications
 - [x] Telegram bot integration (@BleepsAIBot)
 - [x] Multi-channel notifications (web push + Telegram)
 
-### Phase 3: Finance (In Progress)
+### Phase 3: Intelligence ✅
+- [x] Daily briefing
+- [x] Weather module
+- [x] URL summarization
 - [x] Budget tracking
-- [ ] Price alerts
-- [ ] Daily briefing
 
 ### Phase 4: Integrations (Planned)
+- [ ] Google Places (local recommendations)
 - [ ] Google Calendar
 - [ ] Stripe payments
 
