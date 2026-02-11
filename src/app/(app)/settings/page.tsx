@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { ChevronRight, Bell, BellOff, HelpCircle, Trash2, Copy, Check, AtSign, Loader2, Pencil, X, Send, Sun, Moon, LogOut } from 'lucide-react'
+import { ChevronRight, Bell, BellOff, HelpCircle, Trash2, Copy, Check, AtSign, Loader2, Pencil, X, Send, Sun, Moon, LogOut, Newspaper, Plus } from 'lucide-react'
 import { useTheme } from '@/lib/theme-context'
 import { useAuth } from '@/lib/auth-context'
 import {
@@ -35,6 +35,11 @@ export default function SettingsPage() {
   const [briefingEnabled, setBriefingEnabled] = useState(false)
   const [briefingTime, setBriefingTime] = useState('08:00')
   const [briefingLoading, setBriefingLoading] = useState(false)
+
+  // News brief state
+  const [newsEnabled, setNewsEnabled] = useState(false)
+  const [newsTimes, setNewsTimes] = useState<string[]>(['08:00'])
+  const [newsLoading, setNewsLoading] = useState(false)
 
   // Fetch current handle on mount
   useEffect(() => {
@@ -90,6 +95,24 @@ export default function SettingsPage() {
     fetchBriefing()
   }, [userId])
 
+  // Fetch news brief preferences
+  useEffect(() => {
+    async function fetchNews() {
+      if (!userId) return
+      try {
+        const response = await fetch(`/api/news?userId=${userId}`)
+        if (response.ok) {
+          const data = await response.json()
+          setNewsEnabled(data.enabled)
+          setNewsTimes(data.times?.length > 0 ? data.times : ['08:00'])
+        }
+      } catch (error) {
+        console.error('Error fetching news prefs:', error)
+      }
+    }
+    fetchNews()
+  }, [userId])
+
   const handleBriefingToggle = async () => {
     if (!userId) return
     setBriefingLoading(true)
@@ -123,6 +146,76 @@ export default function SettingsPage() {
       })
     } catch (error) {
       console.error('Error updating briefing time:', error)
+    }
+  }
+
+  const handleNewsToggle = async () => {
+    if (!userId) return
+    setNewsLoading(true)
+    const newEnabled = !newsEnabled
+
+    try {
+      const response = await fetch('/api/news', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, enabled: newEnabled })
+      })
+      if (response.ok) {
+        setNewsEnabled(newEnabled)
+      }
+    } catch (error) {
+      console.error('Error toggling news:', error)
+    } finally {
+      setNewsLoading(false)
+    }
+  }
+
+  const handleNewsTimeChange = async (index: number, newTime: string) => {
+    if (!userId) return
+    const updatedTimes = [...newsTimes]
+    updatedTimes[index] = newTime
+    setNewsTimes(updatedTimes)
+
+    try {
+      await fetch('/api/news', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, times: updatedTimes })
+      })
+    } catch (error) {
+      console.error('Error updating news time:', error)
+    }
+  }
+
+  const addNewsTime = async () => {
+    if (!userId || newsTimes.length >= 3) return
+    const updatedTimes = [...newsTimes, '18:00']
+    setNewsTimes(updatedTimes)
+
+    try {
+      await fetch('/api/news', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, times: updatedTimes })
+      })
+    } catch (error) {
+      console.error('Error adding news time:', error)
+    }
+  }
+
+  const removeNewsTime = async (index: number) => {
+    if (!userId || newsTimes.length <= 1) return
+    const updatedTimes = newsTimes.filter((_, i) => i !== index)
+    setNewsTimes(updatedTimes)
+
+    try {
+      await fetch('/api/news', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, times: updatedTimes })
+      })
+    } catch (error) {
+      console.error('Error removing news time:', error)
     }
   }
 
@@ -541,6 +634,79 @@ export default function SettingsPage() {
                   onChange={(e) => handleBriefingTimeChange(e.target.value)}
                   className="bg-muted border border-border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* News Brief */}
+        <div className="p-4 border-b border-border">
+          <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+            News Brief
+          </h2>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Newspaper className={`h-5 w-5 ${newsEnabled ? 'text-primary' : 'text-muted-foreground'}`} />
+                <div>
+                  <p className="font-medium">Daily Headlines</p>
+                  <p className="text-sm text-muted-foreground">
+                    {newsEnabled
+                      ? `${newsTimes.length} brief${newsTimes.length > 1 ? 's' : ''} per day`
+                      : 'Get top headlines delivered daily'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleNewsToggle}
+                disabled={newsLoading}
+                className={`relative w-12 h-7 rounded-full transition-all ${
+                  newsEnabled
+                    ? theme === 'dark' ? 'bg-white' : 'bg-zinc-700'
+                    : theme === 'dark' ? 'bg-transparent border-2 border-white' : 'bg-transparent border-2 border-zinc-900'
+                }`}
+              >
+                <span
+                  className={`absolute w-5 h-5 rounded-full shadow transition-all ${
+                    newsEnabled
+                      ? theme === 'dark' ? 'top-1 left-1 translate-x-5 bg-zinc-800' : 'top-1 left-1 translate-x-5 bg-white'
+                      : theme === 'dark' ? 'top-[3px] left-[3px] translate-x-0 bg-white' : 'top-[3px] left-[3px] translate-x-0 bg-zinc-900'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {newsEnabled && (
+              <div className="space-y-2 pl-8">
+                <label className="text-sm text-muted-foreground">Send at:</label>
+                <div className="flex flex-wrap items-center gap-2">
+                  {newsTimes.map((time, index) => (
+                    <div key={index} className="flex items-center gap-1">
+                      <input
+                        type="time"
+                        value={time}
+                        onChange={(e) => handleNewsTimeChange(index, e.target.value)}
+                        className="bg-muted border border-border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      />
+                      {newsTimes.length > 1 && (
+                        <button
+                          onClick={() => removeNewsTime(index)}
+                          className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  {newsTimes.length < 3 && (
+                    <button
+                      onClick={addNewsTime}
+                      className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors border border-border"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </div>
