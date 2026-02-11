@@ -26,7 +26,7 @@ export default function AppLayout({
       </main>
 
       {/* Bottom tab bar */}
-      <nav className="flex border-t border-border bg-card safe-bottom">
+      <nav className="flex border-t border-border bg-background safe-bottom">
         {tabs.map((tab) => {
           const isActive = pathname === tab.href
           const Icon = tab.icon
@@ -34,14 +34,14 @@ export default function AppLayout({
             <Link
               key={tab.href}
               href={tab.href}
-              className={`flex-1 flex flex-col items-center py-3 px-1 transition-colors ${
+              className={`flex-1 flex items-center justify-center py-3 transition-colors ${
                 isActive
                   ? 'text-foreground'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
+              aria-label={tab.label}
             >
-              <Icon className={`h-5 w-5 ${isActive ? 'stroke-[2.5]' : ''}`} />
-              <span className="text-xs mt-1 font-medium">{tab.label}</span>
+              <Icon className={`h-6 w-6 ${isActive ? 'stroke-[2.5]' : ''}`} />
             </Link>
           )
         })}

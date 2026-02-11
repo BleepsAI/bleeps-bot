@@ -186,8 +186,11 @@ export default function TasksPage() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <header className="flex items-center justify-between px-4 h-14 border-b border-border bg-card safe-top">
-        <h1 className="text-base font-semibold">Tasks</h1>
+      <header className="flex items-center justify-between px-4 h-14 border-b border-border bg-background safe-top">
+        <div className="flex items-center gap-2">
+          <span className="text-base font-semibold">Bleeps</span>
+          <span className="text-base text-muted-foreground">Tasks</span>
+        </div>
       </header>
 
       {/* Tasks list */}
@@ -258,9 +261,7 @@ export default function TasksPage() {
                           </div>
                         ) : (
                           <span
-                            className={`text-sm ${
-                              task.completed ? 'text-muted-foreground line-through' : ''
-                            }`}
+                            className={task.completed ? 'text-muted-foreground line-through' : 'font-medium'}
                           >
                             {task.title}
                           </span>

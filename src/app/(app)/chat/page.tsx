@@ -391,19 +391,15 @@ export default function ChatPage() {
   return (
     <div className="flex flex-col h-full">
       {/* Header with Chat Switcher */}
-      <header className="flex items-center justify-between px-4 h-14 border-b border-border bg-card safe-top">
-        <div className="relative flex items-center">
+      <header className="flex items-center justify-between px-4 h-14 border-b border-border bg-background safe-top">
+        <div className="relative flex items-center gap-1">
+          <span className="text-base font-semibold">Bleeps</span>
           <button
             onClick={() => setShowChatPicker(!showChatPicker)}
-            className="flex items-center gap-2 text-base font-semibold hover:bg-muted px-2 py-1.5 rounded-lg transition-colors"
+            className="flex items-center gap-1.5 text-base text-muted-foreground hover:bg-muted px-2 py-1.5 rounded-lg transition-colors"
           >
-            {currentChat?.type === 'group' ? (
-              <Users className="h-5 w-5" />
-            ) : (
-              <User className="h-5 w-5" />
-            )}
-            <span>{currentChat?.name || 'Bleeps'}</span>
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            <span>{currentChat?.name || 'Personal'}</span>
+            <ChevronDown className="h-4 w-4" />
           </button>
 
           {/* Chat Picker Dropdown */}
@@ -665,10 +661,10 @@ export default function ChatPage() {
               <div
                 className={`max-w-[85%] rounded-2xl px-4 py-2.5 ${
                   isOwnMessage
-                    ? 'bg-primary text-primary-foreground'
+                    ? 'bg-zinc-900 text-foreground'
                     : isBleeps
-                      ? 'bg-indigo-500/20 text-foreground'
-                      : 'bg-muted text-foreground'
+                      ? 'bg-muted text-foreground'
+                      : 'bg-card text-foreground'
                 }`}
               >
                 <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
@@ -691,7 +687,7 @@ export default function ChatPage() {
       </div>
 
       {/* Input */}
-      <div className="border-t border-border bg-card safe-bottom" style={{ padding: '12px 16px' }}>
+      <div className="border-t border-border bg-background safe-bottom" style={{ padding: '12px 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <textarea
             ref={inputRef}
@@ -714,7 +710,7 @@ export default function ChatPage() {
               display: 'block',
               margin: 0
             }}
-            className="placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+            className="placeholder:text-muted-foreground focus:outline-none"
           />
           <button
             onClick={sendMessage}

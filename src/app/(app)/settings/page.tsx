@@ -310,8 +310,11 @@ export default function SettingsPage() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <header className="flex items-center px-4 h-14 border-b border-border bg-card safe-top">
-        <h1 className="text-base font-semibold">Settings</h1>
+      <header className="flex items-center px-4 h-14 border-b border-border bg-background safe-top">
+        <div className="flex items-center gap-2">
+          <span className="text-base font-semibold">Bleeps</span>
+          <span className="text-base text-muted-foreground">Settings</span>
+        </div>
       </header>
 
       {/* Settings list */}
@@ -350,7 +353,7 @@ export default function SettingsPage() {
                   <Pencil className="h-4 w-4" />
                 </button>
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 Share your profile: bleeps.ai/@{currentHandle}
               </p>
             </div>
@@ -458,7 +461,7 @@ export default function SettingsPage() {
               )}
               <div>
                 <p className="font-medium">Push Notifications</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   {pushState === 'denied'
                     ? 'Blocked in browser settings'
                     : pushState === 'unsupported'
@@ -496,7 +499,7 @@ export default function SettingsPage() {
                 <Sun className={`h-5 w-5 ${briefingEnabled ? 'text-primary' : 'text-muted-foreground'}`} />
                 <div>
                   <p className="font-medium">Morning Summary</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-sm text-muted-foreground">
                     {briefingEnabled
                       ? `Daily at ${briefingTime}`
                       : 'Get a summary of your day each morning'}
@@ -549,7 +552,7 @@ export default function SettingsPage() {
               )}
               <div>
                 <p className="font-medium">{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   {theme === 'dark' ? 'Easy on the eyes' : 'Bright and clean'}
                 </p>
               </div>
