@@ -475,13 +475,17 @@ export default function SettingsPage() {
             <button
               onClick={handlePushToggle}
               disabled={pushLoading || pushState === 'denied' || pushState === 'unsupported'}
-              className={`relative w-12 h-7 rounded-full transition-colors ${
-                pushEnabled ? 'bg-primary' : 'bg-zinc-700'
+              className={`relative w-12 h-7 rounded-full transition-all ${
+                pushEnabled
+                  ? theme === 'dark' ? 'bg-white' : 'bg-zinc-700'
+                  : theme === 'dark' ? 'bg-transparent border-2 border-white' : 'bg-transparent border-2 border-zinc-900'
               } ${(pushState === 'denied' || pushState === 'unsupported') ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <span
-                className={`absolute top-1 left-1 w-5 h-5 rounded-full shadow transition-all ${
-                  pushEnabled ? 'translate-x-5 bg-zinc-800' : 'translate-x-0 bg-white'
+                className={`absolute w-5 h-5 rounded-full shadow transition-all ${
+                  pushEnabled
+                    ? theme === 'dark' ? 'top-1 left-1 translate-x-5 bg-zinc-800' : 'top-1 left-1 translate-x-5 bg-white'
+                    : theme === 'dark' ? 'top-[3px] left-[3px] translate-x-0 bg-white' : 'top-[3px] left-[3px] translate-x-0 bg-zinc-900'
                 }`}
               />
             </button>
@@ -509,13 +513,17 @@ export default function SettingsPage() {
               <button
                 onClick={handleBriefingToggle}
                 disabled={briefingLoading}
-                className={`relative w-12 h-7 rounded-full transition-colors ${
-                  briefingEnabled ? 'bg-primary' : 'bg-zinc-700'
+                className={`relative w-12 h-7 rounded-full transition-all ${
+                  briefingEnabled
+                    ? theme === 'dark' ? 'bg-white' : 'bg-zinc-700'
+                    : theme === 'dark' ? 'bg-transparent border-2 border-white' : 'bg-transparent border-2 border-zinc-900'
                 }`}
               >
                 <span
-                  className={`absolute top-1 left-1 w-5 h-5 rounded-full shadow transition-all ${
-                    briefingEnabled ? 'translate-x-5 bg-zinc-800' : 'translate-x-0 bg-white'
+                  className={`absolute w-5 h-5 rounded-full shadow transition-all ${
+                    briefingEnabled
+                      ? theme === 'dark' ? 'top-1 left-1 translate-x-5 bg-zinc-800' : 'top-1 left-1 translate-x-5 bg-white'
+                      : theme === 'dark' ? 'top-[3px] left-[3px] translate-x-0 bg-white' : 'top-[3px] left-[3px] translate-x-0 bg-zinc-900'
                   }`}
                 />
               </button>
@@ -559,13 +567,17 @@ export default function SettingsPage() {
             </div>
             <button
               onClick={toggleTheme}
-              className={`relative w-12 h-7 rounded-full transition-colors ${
-                theme === 'dark' ? 'bg-primary' : 'bg-zinc-700'
+              className={`relative w-12 h-7 rounded-full transition-all ${
+                theme === 'dark'
+                  ? 'bg-white'
+                  : 'bg-transparent border-2 border-zinc-900'
               }`}
             >
               <span
-                className={`absolute top-1 left-1 w-5 h-5 rounded-full shadow transition-all ${
-                  theme === 'dark' ? 'translate-x-5 bg-zinc-800' : 'translate-x-0 bg-white'
+                className={`absolute w-5 h-5 rounded-full shadow transition-all ${
+                  theme === 'dark'
+                    ? 'top-1 left-1 translate-x-5 bg-zinc-800'
+                    : 'top-[3px] left-[3px] translate-x-0 bg-zinc-900'
                 }`}
               />
             </button>

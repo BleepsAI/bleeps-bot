@@ -26,7 +26,7 @@ export default function AppLayout({
       </main>
 
       {/* Bottom tab bar */}
-      <nav className="flex border-t border-border bg-background safe-bottom">
+      <nav className="flex h-14 border-t border-border bg-background safe-bottom">
         {tabs.map((tab) => {
           const isActive = pathname === tab.href
           const Icon = tab.icon
@@ -34,7 +34,7 @@ export default function AppLayout({
             <Link
               key={tab.href}
               href={tab.href}
-              className={`flex-1 flex items-center justify-center py-3 transition-colors ${
+              className={`flex-1 flex items-center justify-center transition-colors ${
                 isActive
                   ? 'text-foreground'
                   : 'text-muted-foreground hover:text-foreground'
