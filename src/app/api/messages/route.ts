@@ -17,13 +17,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'chatId required' }, { status: 400 })
     }
 
-    // Fetch messages with user_id
-    const { data, error } = await supabase
+    // Fetch messages with user_id (get newest first, then reverse for display)
+    const { data: rawData, error } = await supabase
       .from('messages')
       .select('id, role, content, created_at, user_id')
       .eq('chat_id', chatId)
-      .order('created_at', { ascending: true })
+      .order('created_at', { ascending: false })
       .limit(limit)
+
+    // Reverse to get chronological order for display
+    const data = rawData ? [...rawData].reverse() : []
 
     if (error) {
       console.error('Messages fetch error:', error)
