@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Send, Mic, ChevronDown, Users, User, Share2, Copy, Check } from 'lucide-react'
+import { Send, Mic, ChevronDown, Users, User, Share2, Copy, Check, X, Pencil, Trash2, Loader2 } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 
 interface Message {
@@ -34,6 +34,10 @@ export default function ChatPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [detectedTimezone, setDetectedTimezone] = useState<string | null>(null)
   const [copiedGroupId, setCopiedGroupId] = useState<string | null>(null)
+  const [showGroupDetails, setShowGroupDetails] = useState(false)
+  const [editingGroupName, setEditingGroupName] = useState(false)
+  const [groupNameInput, setGroupNameInput] = useState('')
+  const [groupActionLoading, setGroupActionLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -225,6 +229,84 @@ export default function ChatPage() {
     setTimeout(() => setCopiedGroupId(null), 2000)
   }
 
+  const openGroupDetails = () => {
+    if (currentChat?.type === 'group') {
+      setGroupNameInput(currentChat.name)
+      setShowGroupDetails(true)
+      setShowChatPicker(false)
+    }
+  }
+
+  const updateGroupName = async () => {
+    if (!currentChat || !groupNameInput.trim() || groupNameInput === currentChat.name) {
+      setEditingGroupName(false)
+      return
+    }
+
+    setGroupActionLoading(true)
+    try {
+      const response = await fetch('/api/groups', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          groupId: currentChat.id,
+          userId,
+          name: groupNameInput.trim()
+        })
+      })
+
+      if (response.ok) {
+        // Update local state
+        setCurrentChat({ ...currentChat, name: groupNameInput.trim() })
+        setChats(prev => ({
+          ...prev,
+          groups: prev.groups.map(g =>
+            g.id === currentChat.id ? { ...g, name: groupNameInput.trim() } : g
+          )
+        }))
+        setEditingGroupName(false)
+      }
+    } catch (error) {
+      console.error('Error updating group:', error)
+    } finally {
+      setGroupActionLoading(false)
+    }
+  }
+
+  const deleteGroup = async () => {
+    if (!currentChat || !confirm('Are you sure you want to delete this group? This cannot be undone.')) {
+      return
+    }
+
+    setGroupActionLoading(true)
+    try {
+      const response = await fetch('/api/groups', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          groupId: currentChat.id,
+          userId
+        })
+      })
+
+      if (response.ok) {
+        // Switch to solo chat
+        setShowGroupDetails(false)
+        setChats(prev => ({
+          ...prev,
+          groups: prev.groups.filter(g => g.id !== currentChat.id)
+        }))
+        if (chats.solo) {
+          switchChat(chats.solo)
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting group:', error)
+    } finally {
+      setGroupActionLoading(false)
+    }
+  }
+
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return
 
@@ -405,13 +487,142 @@ export default function ChatPage() {
           )}
         </div>
 
-        {/* Current chat indicator for groups */}
+        {/* Current chat indicator for groups - clickable to open details */}
         {currentChat?.type === 'group' && (
-          <span className="text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full font-medium">
-            Group
-          </span>
+          <button
+            onClick={openGroupDetails}
+            className="text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full font-medium hover:bg-muted/80 transition-colors"
+          >
+            Group Settings
+          </button>
         )}
       </header>
+
+      {/* Group Details Modal */}
+      {showGroupDetails && currentChat?.type === 'group' && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/50 z-50"
+            onClick={() => {
+              setShowGroupDetails(false)
+              setEditingGroupName(false)
+            }}
+          />
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md bg-card border border-border rounded-2xl shadow-xl z-50 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-semibold">Group Settings</h2>
+              <button
+                onClick={() => {
+                  setShowGroupDetails(false)
+                  setEditingGroupName(false)
+                }}
+                className="p-1 hover:bg-muted rounded-lg transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Group Name */}
+            <div className="mb-6">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Group Name
+              </label>
+              {editingGroupName ? (
+                <div className="flex items-center gap-2 mt-2">
+                  <input
+                    type="text"
+                    value={groupNameInput}
+                    onChange={(e) => setGroupNameInput(e.target.value)}
+                    className="flex-1 px-3 py-2 bg-muted rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') updateGroupName()
+                      if (e.key === 'Escape') {
+                        setEditingGroupName(false)
+                        setGroupNameInput(currentChat.name)
+                      }
+                    }}
+                  />
+                  <button
+                    onClick={updateGroupName}
+                    disabled={groupActionLoading}
+                    className="p-2 bg-primary text-primary-foreground rounded-lg disabled:opacity-50"
+                  >
+                    {groupActionLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Check className="h-4 w-4" />
+                    )}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingGroupName(false)
+                      setGroupNameInput(currentChat.name)
+                    }}
+                    className="p-2 hover:bg-muted rounded-lg"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between mt-2">
+                  <span className="text-base">{currentChat.name}</span>
+                  {currentChat.role === 'owner' && (
+                    <button
+                      onClick={() => setEditingGroupName(true)}
+                      className="p-2 hover:bg-muted rounded-lg transition-colors"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Invite Link */}
+            {currentChat.role === 'owner' && currentChat.invite_code && (
+              <div className="mb-6">
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Invite Link
+                </label>
+                <div className="flex items-center gap-2 mt-2">
+                  <code className="flex-1 px-3 py-2 bg-muted rounded-lg text-sm truncate">
+                    {`${window.location.origin}/join/${currentChat.invite_code}`}
+                  </code>
+                  <button
+                    onClick={(e) => copyGroupLink(currentChat, e)}
+                    className="p-2 hover:bg-muted rounded-lg transition-colors"
+                  >
+                    {copiedGroupId === currentChat.id ? (
+                      <Check className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Delete Group */}
+            {currentChat.role === 'owner' && (
+              <div className="pt-4 border-t border-border">
+                <button
+                  onClick={deleteGroup}
+                  disabled={groupActionLoading}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {groupActionLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4" />
+                  )}
+                  Delete Group
+                </button>
+              </div>
+            )}
+          </div>
+        </>
+      )}
 
       {/* Click outside to close dropdown */}
       {showChatPicker && (
