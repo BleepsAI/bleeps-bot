@@ -13,7 +13,7 @@ interface Task {
   createdAt: string
 }
 
-function getSection(task: Task): 'today' | 'tomorrow' | 'upcoming' | 'completed' | 'no-date' {
+function getSection(task: Task): 'overdue' | 'today' | 'tomorrow' | 'upcoming' | 'completed' | 'no-date' {
   if (task.completed) return 'completed'
   if (!task.dueDate) return 'no-date'
 
@@ -21,10 +21,15 @@ function getSection(task: Task): 'today' | 'tomorrow' | 'upcoming' | 'completed'
   const now = new Date()
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const tomorrow = new Date(today.getTime() + 86400000)
-  const dayAfter = new Date(today.getTime() + 86400000 * 2)
+  const dayAfter = new Date(tomorrow.getTime() + 86400000)
 
-  if (due < dayAfter && due >= today) return 'today'
-  if (due >= dayAfter && due < new Date(today.getTime() + 86400000 * 2)) return 'tomorrow'
+  // Overdue: due date is before today
+  if (due < today) return 'overdue'
+  // Today: due date is today
+  if (due < tomorrow) return 'today'
+  // Tomorrow: due date is tomorrow
+  if (due < dayAfter) return 'tomorrow'
+  // Upcoming: anything further out
   return 'upcoming'
 }
 
@@ -43,6 +48,7 @@ function formatDueDate(dateStr: string): string {
 }
 
 const sections = [
+  { key: 'overdue', label: 'Overdue' },
   { key: 'today', label: 'Today' },
   { key: 'tomorrow', label: 'Tomorrow' },
   { key: 'upcoming', label: 'Upcoming' },

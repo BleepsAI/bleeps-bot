@@ -22,7 +22,6 @@ export async function GET(request: NextRequest) {
       .eq('user_id', userId)
       .eq('completed', false)
       .order('due_at', { ascending: true })
-      .limit(50)
 
     if (remindersError) {
       console.error('Error fetching reminders:', remindersError)
@@ -35,7 +34,6 @@ export async function GET(request: NextRequest) {
       .eq('user_id', userId)
       .eq('completed', false)
       .order('created_at', { ascending: false })
-      .limit(50)
 
     if (tasksError) {
       console.error('Error fetching tasks:', tasksError)
