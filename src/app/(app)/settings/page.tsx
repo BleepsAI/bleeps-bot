@@ -334,20 +334,20 @@ export default function SettingsPage() {
             // Has handle - display mode
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <div className="flex-1 flex items-center bg-muted px-3 py-2 rounded">
+                <div className="flex-1 flex items-center bg-muted px-3 py-2 rounded-lg">
                   <AtSign className="h-4 w-4 text-muted-foreground mr-1" />
                   <span className="font-medium">{currentHandle}</span>
                 </div>
                 <button
                   onClick={copyHandle}
-                  className="p-2 hover:bg-muted rounded transition-colors"
+                  className="p-2 hover:bg-muted rounded-lg transition-colors"
                   title="Copy profile link"
                 >
                   {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
                 </button>
                 <button
                   onClick={startEditingHandle}
-                  className="p-2 hover:bg-muted rounded transition-colors"
+                  className="p-2 hover:bg-muted rounded-lg transition-colors"
                   title="Edit handle"
                 >
                   <Pencil className="h-4 w-4" />
@@ -369,21 +369,21 @@ export default function SettingsPage() {
                     onChange={handleInputChange}
                     maxLength={15}
                     autoFocus
-                    className="w-full pl-7 pr-3 py-2 bg-muted rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full pl-7 pr-3 py-2 bg-muted rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="yourhandle"
                   />
                 </div>
                 <button
                   onClick={saveHandle}
                   disabled={handleStatus !== 'available' || claiming || handleInput === currentHandle}
-                  className="p-2 bg-primary text-primary-foreground rounded disabled:opacity-50"
+                  className="p-2 bg-primary text-primary-foreground rounded-lg disabled:opacity-50"
                   title="Save"
                 >
                   {claiming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                 </button>
                 <button
                   onClick={cancelEditingHandle}
-                  className="p-2 hover:bg-muted rounded transition-colors"
+                  className="p-2 hover:bg-muted rounded-lg transition-colors"
                   title="Cancel"
                 >
                   <X className="h-4 w-4" />
@@ -417,14 +417,14 @@ export default function SettingsPage() {
                     value={handleInput}
                     onChange={handleInputChange}
                     maxLength={15}
-                    className="w-full pl-7 pr-3 py-2 bg-muted rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full pl-7 pr-3 py-2 bg-muted rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="yourhandle"
                   />
                 </div>
                 <button
                   onClick={claimHandle}
                   disabled={handleStatus !== 'available' || claiming}
-                  className="px-4 py-2 bg-primary text-primary-foreground rounded text-sm font-medium disabled:opacity-50"
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium disabled:opacity-50"
                 >
                   {claiming ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Claim'}
                 </button>
@@ -476,7 +476,7 @@ export default function SettingsPage() {
               onClick={handlePushToggle}
               disabled={pushLoading || pushState === 'denied' || pushState === 'unsupported'}
               className={`relative w-12 h-7 rounded-full transition-colors ${
-                pushEnabled ? 'bg-primary' : 'bg-muted'
+                pushEnabled ? 'bg-primary' : 'bg-zinc-700'
               } ${(pushState === 'denied' || pushState === 'unsupported') ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <span
@@ -510,7 +510,7 @@ export default function SettingsPage() {
                 onClick={handleBriefingToggle}
                 disabled={briefingLoading}
                 className={`relative w-12 h-7 rounded-full transition-colors ${
-                  briefingEnabled ? 'bg-primary' : 'bg-muted'
+                  briefingEnabled ? 'bg-primary' : 'bg-zinc-700'
                 }`}
               >
                 <span
@@ -560,7 +560,7 @@ export default function SettingsPage() {
             <button
               onClick={toggleTheme}
               className={`relative w-12 h-7 rounded-full transition-colors ${
-                theme === 'dark' ? 'bg-primary' : 'bg-muted'
+                theme === 'dark' ? 'bg-primary' : 'bg-zinc-700'
               }`}
             >
               <span
@@ -587,7 +587,7 @@ export default function SettingsPage() {
                 href="https://t.me/BleepsAIBot"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-3 py-2 bg-[#0088cc] text-white rounded text-sm font-medium hover:bg-[#0077b5] transition-colors"
+                className="inline-flex items-center gap-2 px-3 py-2 bg-[#0088cc] text-white rounded-lg text-sm font-medium hover:bg-[#0077b5] transition-colors"
               >
                 <Send className="h-4 w-4" />
                 Open Telegram Bot
@@ -596,12 +596,12 @@ export default function SettingsPage() {
             <div className="space-y-2">
               <p className="text-xs font-medium">2. Send this command to link your account:</p>
               <div className="flex items-center gap-2">
-                <code className="flex-1 bg-muted px-3 py-2 rounded text-sm font-mono">
+                <code className="flex-1 bg-muted px-3 py-2 rounded-lg text-sm font-mono">
                   /link {telegramLinkCode}
                 </code>
                 <button
                   onClick={copyTelegramCode}
-                  className="p-2 hover:bg-muted rounded transition-colors"
+                  className="p-2 hover:bg-muted rounded-lg transition-colors"
                   title="Copy command"
                 >
                   {telegramCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}

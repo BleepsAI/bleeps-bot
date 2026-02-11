@@ -41,7 +41,7 @@ export default function AppLayout({
               }`}
               aria-label={tab.label}
             >
-              <Icon className={`h-6 w-6 ${isActive ? 'stroke-[2.5]' : ''}`} />
+              <Icon className={`h-5 w-5 ${isActive ? 'stroke-[2.5]' : ''}`} />
             </Link>
           )
         })}
