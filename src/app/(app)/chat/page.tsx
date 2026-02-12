@@ -176,7 +176,6 @@ export default function ChatPage() {
 
   // Fetch polls for chat
   useEffect(() => {
-    console.log('POLLS DEBUG: chatId=', chatId)
     if (!chatId) {
       setPolls([])
       return
@@ -184,20 +183,14 @@ export default function ChatPage() {
 
     const fetchPolls = async () => {
       try {
-        console.log('POLLS DEBUG: fetching...')
         const response = await fetch(`/api/polls?chatId=${chatId}`)
-        console.log('POLLS DEBUG: response status=', response.status)
         if (response.ok) {
           const data = await response.json()
-          console.log('POLLS DEBUG: data=', JSON.stringify(data))
           const pollIds = (data.polls || []).map((p: { id: string }) => p.id)
-          console.log('POLLS DEBUG: setting pollIds=', pollIds)
           setPolls(pollIds)
-        } else {
-          console.log('POLLS DEBUG: response not ok')
         }
       } catch (error) {
-        console.error('POLLS DEBUG: error=', error)
+        console.error('Error fetching polls:', error)
       }
     }
 
@@ -683,10 +676,6 @@ export default function ChatPage() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-        {/* Debug banner - remove after fixing */}
-        <div className="text-xs bg-yellow-500 text-black p-1 rounded">
-          DEBUG: polls={polls.length}, chatId={chatId?.slice(0,8)}
-        </div>
         {polls.length > 0 && (
           <div className="space-y-3 mb-4">
             {polls.map(pollId => (
