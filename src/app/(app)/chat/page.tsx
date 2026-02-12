@@ -16,6 +16,11 @@ interface Message {
   isOwnMessage?: boolean
 }
 
+interface PollInfo {
+  id: string
+  createdAt: Date
+}
+
 interface ChatInfo {
   id: string
   type: 'solo' | 'group'
@@ -41,7 +46,7 @@ export default function ChatPage() {
   const [groupNameInput, setGroupNameInput] = useState('')
   const [groupActionLoading, setGroupActionLoading] = useState(false)
   const [showCreatePoll, setShowCreatePoll] = useState(false)
-  const [polls, setPolls] = useState<string[]>([]) // poll IDs
+  const [polls, setPolls] = useState<PollInfo[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -186,8 +191,11 @@ export default function ChatPage() {
         const response = await fetch(`/api/polls?chatId=${chatId}`)
         if (response.ok) {
           const data = await response.json()
-          const pollIds = (data.polls || []).map((p: { id: string }) => p.id)
-          setPolls(pollIds)
+          const pollInfos = (data.polls || []).map((p: { id: string; created_at: string }) => ({
+            id: p.id,
+            createdAt: new Date(p.created_at)
+          }))
+          setPolls(pollInfos)
         }
       } catch (error) {
         console.error('Error fetching polls:', error)
@@ -400,7 +408,10 @@ export default function ChatPage() {
         const pollsResponse = await fetch(`/api/polls?chatId=${chatId}`)
         if (pollsResponse.ok) {
           const pollsData = await pollsResponse.json()
-          setPolls((pollsData.polls || []).map((p: { id: string }) => p.id))
+          setPolls((pollsData.polls || []).map((p: { id: string; created_at: string }) => ({
+            id: p.id,
+            createdAt: new Date(p.created_at)
+          })))
         }
       }
     } catch (error) {
@@ -670,62 +681,72 @@ export default function ChatPage() {
           chatId={chatId}
           userId={userId}
           onClose={() => setShowCreatePoll(false)}
-          onCreated={(pollId) => setPolls(prev => [pollId, ...prev])}
+          onCreated={(pollId) => setPolls(prev => [...prev, { id: pollId, createdAt: new Date() }])}
         />
       )}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-        {polls.length > 0 && (
-          <div className="space-y-3 mb-4">
-            {polls.map(pollId => (
-              <PollCard key={pollId} pollId={pollId} userId={userId} />
-            ))}
-          </div>
-        )}
+        {/* Combine messages and polls, sorted by timestamp */}
+        {(() => {
+          type FeedItem =
+            | { type: 'message'; data: Message; timestamp: Date }
+            | { type: 'poll'; data: PollInfo; timestamp: Date }
 
-        {messages.map((message, index) => {
-          const isOwnMessage = message.role === 'user' && message.isOwnMessage !== false
-          const isOtherUser = message.role === 'user' && message.isOwnMessage === false
-          const isBleeps = message.role === 'assistant'
+          const feed: FeedItem[] = [
+            ...messages.map(m => ({ type: 'message' as const, data: m, timestamp: m.timestamp })),
+            ...polls.map(p => ({ type: 'poll' as const, data: p, timestamp: p.createdAt }))
+          ].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
 
-          // Show sender name in group chats for Bleeps and other users (not your own messages)
-          const showSenderName = currentChat?.type === 'group' && !isOwnMessage
+          return feed.map((item, index) => {
+            if (item.type === 'poll') {
+              return <PollCard key={`poll-${item.data.id}`} pollId={item.data.id} userId={userId} />
+            }
 
-          // Check if previous message was from the same sender (to avoid repeating names)
-          const prevMessage = messages[index - 1]
-          const sameSenderAsPrev = prevMessage && (
-            (isBleeps && prevMessage.role === 'assistant') ||
-            (isOtherUser && prevMessage.role === 'user' && prevMessage.senderId === message.senderId)
-          )
+            const message = item.data
+            const isOwnMessage = message.role === 'user' && message.isOwnMessage !== false
+            const isOtherUser = message.role === 'user' && message.isOwnMessage === false
+            const isBleeps = message.role === 'assistant'
 
-          // Alignment: your messages right, everyone else left
-          const alignRight = isOwnMessage
+            // Show sender name in group chats for Bleeps and other users (not your own messages)
+            const showSenderName = currentChat?.type === 'group' && !isOwnMessage
 
-          return (
-            <div
-              key={message.id}
-              className={`flex flex-col ${alignRight ? 'items-end' : 'items-start'}`}
-            >
-              {showSenderName && !sameSenderAsPrev && (
-                <span className="text-xs text-muted-foreground mb-1 px-1">
-                  {isBleeps ? 'Bleeps' : message.senderName}
-                </span>
-              )}
+            // Check if previous item was a message from the same sender
+            const prevItem = feed[index - 1]
+            const prevMessage = prevItem?.type === 'message' ? prevItem.data : null
+            const sameSenderAsPrev = prevMessage && (
+              (isBleeps && prevMessage.role === 'assistant') ||
+              (isOtherUser && prevMessage.role === 'user' && prevMessage.senderId === message.senderId)
+            )
+
+            // Alignment: your messages right, everyone else left
+            const alignRight = isOwnMessage
+
+            return (
               <div
-                className={`max-w-[85%] rounded-2xl px-4 py-2.5 ${
-                  isOwnMessage
-                    ? 'bg-primary text-primary-foreground'
-                    : isBleeps
-                      ? 'bg-muted text-foreground'
-                      : 'bg-card text-foreground'
-                }`}
+                key={message.id}
+                className={`flex flex-col ${alignRight ? 'items-end' : 'items-start'}`}
               >
-                <p className="whitespace-pre-wrap leading-normal">{message.content}</p>
+                {showSenderName && !sameSenderAsPrev && (
+                  <span className="text-xs text-muted-foreground mb-1 px-1">
+                    {isBleeps ? 'Bleeps' : message.senderName}
+                  </span>
+                )}
+                <div
+                  className={`max-w-[85%] rounded-2xl px-4 py-2.5 ${
+                    isOwnMessage
+                      ? 'bg-primary text-primary-foreground'
+                      : isBleeps
+                        ? 'bg-muted text-foreground'
+                        : 'bg-card text-foreground'
+                  }`}
+                >
+                  <p className="whitespace-pre-wrap leading-normal">{message.content}</p>
+                </div>
               </div>
-            </div>
-          )
-        })}
+            )
+          })
+        })()}
         {isLoading && messages.length > 0 && (
           <div className="flex justify-start">
             <div className="bg-muted rounded-2xl px-4 py-3">
