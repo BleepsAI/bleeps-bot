@@ -875,9 +875,23 @@ export default function SettingsPage() {
                 <p className="text-sm text-muted-foreground">
                   Sync your Bleeps tasks with Trello boards.
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  To connect, say &quot;Connect my Trello&quot; in chat. Bleeps will guide you through getting your API key from trello.com/app-key.
-                </p>
+                <button
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('/api/integrations/trello')
+                      const data = await response.json()
+                      if (data.authUrl) {
+                        window.location.href = data.authUrl
+                      }
+                    } catch (err) {
+                      console.error('Error getting Trello auth URL:', err)
+                    }
+                  }}
+                  className="inline-flex items-center gap-2 px-3 py-2 bg-[#0079BF] text-white rounded-lg text-sm font-medium hover:bg-[#0067A3] transition-colors"
+                >
+                  <Link2 className="h-4 w-4" />
+                  Connect to Trello
+                </button>
               </div>
             )}
           </div>
