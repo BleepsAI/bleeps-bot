@@ -37,12 +37,16 @@ export async function GET(request: NextRequest) {
 
       // Get voter names
       const voterIds = [...new Set((votes || []).map(v => v.user_id))]
-      const { data: profiles } = await supabase
-        .from('user_profiles')
-        .select('user_id, display_name')
-        .in('user_id', voterIds)
+      let profileMap = new Map<string, string>()
 
-      const profileMap = new Map((profiles || []).map(p => [p.user_id, p.display_name]))
+      if (voterIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('user_profiles')
+          .select('user_id, display_name')
+          .in('user_id', voterIds)
+
+        profileMap = new Map((profiles || []).map(p => [p.user_id, p.display_name]))
+      }
 
       // Format options with vote counts and voter names
       const formattedOptions = (options || []).map(opt => {

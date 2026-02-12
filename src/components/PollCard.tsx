@@ -31,20 +31,17 @@ export default function PollCard({ pollId, userId, onVote }: PollCardProps) {
   const [loading, setLoading] = useState(true)
   const [voting, setVoting] = useState<string | null>(null)
 
-  console.log('[PollCard] Mounted with pollId:', pollId)
-
   const fetchPoll = async () => {
-    console.log('[PollCard] Fetching poll:', pollId)
     try {
       const response = await fetch(`/api/polls?pollId=${pollId}`)
-      console.log('[PollCard] Response:', response.status)
       if (response.ok) {
         const data = await response.json()
-        console.log('[PollCard] Poll data:', data)
         setPoll(data.poll)
+      } else {
+        console.error('PollCard fetch failed:', response.status, await response.text())
       }
     } catch (error) {
-      console.error('[PollCard] Error fetching poll:', error)
+      console.error('PollCard error:', error)
     } finally {
       setLoading(false)
     }
