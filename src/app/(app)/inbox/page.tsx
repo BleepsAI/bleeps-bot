@@ -142,7 +142,7 @@ export default function InboxPage() {
                     )}
                   </div>
                   {item.body && (
-                    <p className="text-sm text-muted-foreground mt-0.5">
+                    <p className="text-sm text-muted-foreground mt-0.5 whitespace-pre-line">
                       {item.body}
                     </p>
                   )}
