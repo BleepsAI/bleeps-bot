@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { ChevronRight, Bell, BellOff, HelpCircle, Trash2, Copy, Check, AtSign, Loader2, Pencil, X, Send, Sun, Moon, LogOut, Newspaper, Plus } from 'lucide-react'
+import { ChevronRight, Bell, BellOff, HelpCircle, Trash2, Copy, Check, AtSign, Loader2, Pencil, X, Send, Sun, Moon, LogOut, Newspaper, Plus, Link2, Unlink } from 'lucide-react'
 import { useTheme } from '@/lib/theme-context'
 import { useAuth } from '@/lib/auth-context'
 import {
@@ -40,6 +40,11 @@ export default function SettingsPage() {
   const [newsEnabled, setNewsEnabled] = useState(false)
   const [newsTimes, setNewsTimes] = useState<string[]>(['08:00'])
   const [newsLoading, setNewsLoading] = useState(false)
+
+  // Trello integration state
+  const [trelloConnected, setTrelloConnected] = useState(false)
+  const [trelloUsername, setTrelloUsername] = useState<string | null>(null)
+  const [trelloLoading, setTrelloLoading] = useState(true)
 
   // Fetch current handle on mount
   useEffect(() => {
@@ -111,6 +116,26 @@ export default function SettingsPage() {
       }
     }
     fetchNews()
+  }, [userId])
+
+  // Fetch Trello connection status
+  useEffect(() => {
+    async function fetchTrelloStatus() {
+      if (!userId) return
+      try {
+        const response = await fetch(`/api/integrations?userId=${userId}&provider=trello`)
+        if (response.ok) {
+          const data = await response.json()
+          setTrelloConnected(data.connected)
+          setTrelloUsername(data.username || null)
+        }
+      } catch (error) {
+        console.error('Error fetching Trello status:', error)
+      } finally {
+        setTrelloLoading(false)
+      }
+    }
+    fetchTrelloStatus()
   }, [userId])
 
   const handleBriefingToggle = async () => {
@@ -216,6 +241,28 @@ export default function SettingsPage() {
       })
     } catch (error) {
       console.error('Error removing news time:', error)
+    }
+  }
+
+  const disconnectTrello = async () => {
+    if (!userId) return
+    if (!confirm('Disconnect Trello? You can reconnect anytime via chat.')) return
+
+    setTrelloLoading(true)
+    try {
+      const response = await fetch('/api/integrations', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, provider: 'trello' })
+      })
+      if (response.ok) {
+        setTrelloConnected(false)
+        setTrelloUsername(null)
+      }
+    } catch (error) {
+      console.error('Error disconnecting Trello:', error)
+    } finally {
+      setTrelloLoading(false)
     }
   }
 
@@ -750,12 +797,18 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Telegram */}
+        {/* Integrations */}
         <div className="p-4 border-b border-border">
           <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
-            Telegram
+            Integrations
           </h2>
-          <div className="space-y-3">
+
+          {/* Telegram */}
+          <div className="space-y-3 mb-6">
+            <div className="flex items-center gap-2">
+              <Send className="h-5 w-5 text-[#0088cc]" />
+              <span className="font-medium">Telegram</span>
+            </div>
             <p className="text-sm text-muted-foreground">
               Get notifications on Telegram and chat with Bleeps directly in the app.
             </p>
@@ -786,6 +839,47 @@ export default function SettingsPage() {
                 </button>
               </div>
             </div>
+          </div>
+
+          {/* Trello */}
+          <div className="space-y-3 pt-4 border-t border-border">
+            <div className="flex items-center gap-2">
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="#0079BF">
+                <path d="M21 0H3C1.343 0 0 1.343 0 3v18c0 1.656 1.343 3 3 3h18c1.656 0 3-1.344 3-3V3c0-1.657-1.344-3-3-3zM10.44 18.18c0 .795-.645 1.44-1.44 1.44H4.56c-.795 0-1.44-.645-1.44-1.44V4.56c0-.795.645-1.44 1.44-1.44H9c.795 0 1.44.645 1.44 1.44v13.62zm10.44-6c0 .794-.645 1.44-1.44 1.44H15c-.795 0-1.44-.646-1.44-1.44V4.56c0-.795.645-1.44 1.44-1.44h4.44c.795 0 1.44.645 1.44 1.44v7.62z"/>
+              </svg>
+              <span className="font-medium">Trello</span>
+              {trelloConnected && (
+                <span className="text-xs bg-green-500/20 text-green-500 px-2 py-0.5 rounded-full">Connected</span>
+              )}
+            </div>
+            {trelloLoading ? (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm">Loading...</span>
+              </div>
+            ) : trelloConnected ? (
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  Connected{trelloUsername ? ` as ${trelloUsername}` : ''}. Sync tasks via chat.
+                </p>
+                <button
+                  onClick={disconnectTrello}
+                  className="inline-flex items-center gap-2 px-3 py-2 bg-muted text-muted-foreground rounded-lg text-sm font-medium hover:bg-muted/80 transition-colors"
+                >
+                  <Unlink className="h-4 w-4" />
+                  Disconnect
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  Sync your Bleeps tasks with Trello boards.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  To connect, say &quot;Connect my Trello&quot; in chat. Bleeps will guide you through getting your API key from trello.com/app-key.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
