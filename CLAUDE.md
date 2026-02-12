@@ -24,13 +24,19 @@ Next.js web app for Bleeps - a personal AI assistant. This is the UI layer.
 ## API Routes
 - `/api/tasks` - GET/PATCH/DELETE tasks (also deletes from notification_log on complete)
 - `/api/inbox` - GET/PATCH/DELETE from notification_log
-- `/api/messages` - Conversation history
+- `/api/messages` - GET/DELETE conversation history
 - `/api/chat` - Proxy to bleeps-2 `/api/message`
+- `/api/polls` - GET/POST/DELETE polls
+- `/api/polls/vote` - POST to vote on poll option
 
 ## Key Concepts
 - **Tasks with notifications**: Tasks show badges (⏰ pending, 🔔 sent) if they have `notify_at`
 - **Inbox = Notification log**: Shows history of sent notifications, not pending items
 - **Completing task deletes its notification** from inbox
+- **Polls**: Group chat feature. Single-choice by default. Inline in chat feed at creation time. Creator can delete via three-dot menu.
+
+## Planned Features
+- **Group reminders**: "Remind everyone to respond to the poll at 5pm" - creates notification for each group member
 
 ## Environment Variables
 - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Client-side Supabase
