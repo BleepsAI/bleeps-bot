@@ -690,8 +690,13 @@ export default function ChatPage() {
       setMessages((prev) => [...prev, assistantMessage])
 
       // Check if a group was created and refresh chats
-      if (data.content.toLowerCase().includes('created group') ||
-          data.content.toLowerCase().includes('share this code')) {
+      const lowerContent = data.content.toLowerCase()
+      if (lowerContent.includes('created group') ||
+          lowerContent.includes('created a group') ||
+          lowerContent.includes('new group') ||
+          lowerContent.includes('share this code') ||
+          lowerContent.includes('invite code') ||
+          lowerContent.includes('group is ready')) {
         const chatsResponse = await fetch(`/api/groups?userId=${userId}`)
         if (chatsResponse.ok) {
           const chatsData = await chatsResponse.json()

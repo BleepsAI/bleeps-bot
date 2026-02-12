@@ -3,11 +3,11 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { MessageSquare, CheckSquare, Bell, Settings } from 'lucide-react'
+import { MessageCircle, CheckSquare, Bell, Settings } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 
 const tabs = [
-  { href: '/chat', label: 'Chat', icon: MessageSquare },
+  { href: '/chat', label: 'Chat', icon: MessageCircle },
   { href: '/tasks', label: 'Tasks', icon: CheckSquare },
   { href: '/inbox', label: 'Notifications', icon: Bell },
   { href: '/settings', label: 'Settings', icon: Settings },
