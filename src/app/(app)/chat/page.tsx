@@ -191,6 +191,7 @@ export default function ChatPage() {
           const data = await response.json()
           console.log('[Polls] Data received:', data)
           const pollIds = (data.polls || []).map((p: { id: string }) => p.id)
+          console.log('[Polls] Setting poll IDs:', pollIds)
           setPolls(pollIds)
         }
       } catch (error) {
@@ -681,11 +682,13 @@ export default function ChatPage() {
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
         {/* Active Polls */}
+        {console.log('[Polls] Rendering, polls array:', polls)}
         {polls.length > 0 && (
           <div className="space-y-3 mb-4">
-            {polls.map(pollId => (
-              <PollCard key={pollId} pollId={pollId} userId={userId} />
-            ))}
+            {polls.map(pollId => {
+              console.log('[Polls] Rendering PollCard for:', pollId)
+              return <PollCard key={pollId} pollId={pollId} userId={userId} />
+            })}
           </div>
         )}
 
