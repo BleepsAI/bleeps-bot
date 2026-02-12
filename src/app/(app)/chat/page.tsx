@@ -70,6 +70,11 @@ export default function ChatPage() {
   const [chatKey, setChatKey] = useState<CryptoKey | null>(null)
   const [serverPublicKey, setServerPublicKey] = useState<CryptoKey | null>(null)
   const [keyMissing, setKeyMissing] = useState(false)
+  // Voice recording state
+  const [isRecording, setIsRecording] = useState(false)
+  const [isTranscribing, setIsTranscribing] = useState(false)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioChunksRef = useRef<Blob[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -512,6 +517,83 @@ export default function ChatPage() {
       console.error('Error enabling encryption:', error)
     } finally {
       setGroupActionLoading(false)
+    }
+  }
+
+  // Voice recording functions
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4'
+      })
+
+      mediaRecorderRef.current = mediaRecorder
+      audioChunksRef.current = []
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data)
+        }
+      }
+
+      mediaRecorder.onstop = async () => {
+        // Stop all tracks
+        stream.getTracks().forEach(track => track.stop())
+
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
+        await transcribeAudio(audioBlob)
+      }
+
+      mediaRecorder.start()
+      setIsRecording(true)
+    } catch (error) {
+      console.error('Failed to start recording:', error)
+      alert('Could not access microphone. Please check permissions.')
+    }
+  }
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop()
+      setIsRecording(false)
+    }
+  }
+
+  const transcribeAudio = async (audioBlob: Blob) => {
+    setIsTranscribing(true)
+    try {
+      const formData = new FormData()
+      formData.append('audio', audioBlob, 'audio.webm')
+
+      const response = await fetch('/api/transcribe', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        throw new Error('Transcription failed')
+      }
+
+      const result = await response.json()
+      if (result.text) {
+        // Append to existing input or set new
+        setInput(prev => prev ? `${prev} ${result.text}` : result.text)
+        inputRef.current?.focus()
+      }
+    } catch (error) {
+      console.error('Transcription error:', error)
+      alert('Failed to transcribe audio. Please try again.')
+    } finally {
+      setIsTranscribing(false)
+    }
+  }
+
+  const toggleRecording = () => {
+    if (isRecording) {
+      stopRecording()
+    } else {
+      startRecording()
     }
   }
 
@@ -1183,6 +1265,25 @@ export default function ChatPage() {
               <BarChart3 className="h-5 w-5" />
             </button>
           )}
+          {/* Voice recording button */}
+          <button
+            onClick={toggleRecording}
+            disabled={isTranscribing}
+            className={`flex-shrink-0 p-2 rounded-full transition-colors ${
+              isRecording
+                ? 'bg-red-500 text-white animate-pulse'
+                : isTranscribing
+                  ? 'bg-muted text-muted-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+            }`}
+            aria-label={isRecording ? 'Stop recording' : 'Start recording'}
+          >
+            {isTranscribing ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Mic className="h-5 w-5" />
+            )}
+          </button>
           <button
             onClick={sendMessage}
             disabled={!input.trim() || isLoading}
