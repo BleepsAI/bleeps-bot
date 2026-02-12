@@ -733,17 +733,7 @@ export default function ChatPage() {
 
       {/* Input */}
       <div className="border-t border-border bg-background safe-bottom" style={{ padding: '12px 16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {/* Poll button for groups */}
-          {currentChat?.type === 'group' && (
-            <button
-              onClick={() => setShowCreatePoll(true)}
-              className="flex-shrink-0 p-2.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors"
-              aria-label="Create poll"
-            >
-              <BarChart3 className="h-5 w-5" />
-            </button>
-          )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <textarea
             ref={inputRef}
             value={input}
@@ -767,6 +757,16 @@ export default function ChatPage() {
             }}
             className="placeholder:text-muted-foreground focus:outline-none"
           />
+          {/* Poll button for groups */}
+          {currentChat?.type === 'group' && (
+            <button
+              onClick={() => setShowCreatePoll(true)}
+              className="flex-shrink-0 p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors"
+              aria-label="Create poll"
+            >
+              <BarChart3 className="h-5 w-5" />
+            </button>
+          )}
           <button
             onClick={sendMessage}
             disabled={!input.trim() || isLoading}
