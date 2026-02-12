@@ -26,7 +26,16 @@ function getSection(task: Task): 'overdue' | 'today' | 'tomorrow' | 'upcoming' |
 
   if (!task.dueDate) return 'no-date'
 
-  const due = new Date(task.dueDate)
+  // Parse date string as local date (not UTC)
+  let due: Date
+  const dateStr = task.dueDate
+  if (dateStr.length === 10 && dateStr.includes('-')) {
+    const [year, month, day] = dateStr.split('-').map(Number)
+    due = new Date(year, month - 1, day)
+  } else {
+    due = new Date(dateStr)
+  }
+
   const now = new Date()
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const tomorrow = new Date(today.getTime() + 86400000)
@@ -43,13 +52,24 @@ function getSection(task: Task): 'overdue' | 'today' | 'tomorrow' | 'upcoming' |
 }
 
 function formatDueDate(dateStr: string): string {
-  const date = new Date(dateStr)
+  // Parse date string as local date (not UTC)
+  // If it's a date-only string like "2024-02-12", parse as local
+  let date: Date
+  if (dateStr.length === 10 && dateStr.includes('-')) {
+    // Date-only format: YYYY-MM-DD - parse as local
+    const [year, month, day] = dateStr.split('-').map(Number)
+    date = new Date(year, month - 1, day)
+  } else {
+    date = new Date(dateStr)
+  }
+
   const now = new Date()
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const diffDays = Math.floor((date.getTime() - today.getTime()) / 86400000)
 
   if (diffDays === 0) return 'Today'
   if (diffDays === 1) return 'Tomorrow'
+  if (diffDays === -1) return 'Yesterday'
   if (diffDays > 1 && diffDays < 7) {
     return date.toLocaleDateString('en-US', { weekday: 'short' })
   }
@@ -440,12 +460,23 @@ export default function TasksPage() {
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   Due Date
                 </label>
-                <input
-                  type="date"
-                  value={editModalDueDate}
-                  onChange={(e) => setEditModalDueDate(e.target.value)}
-                  className="w-full mt-2 px-3 py-2 bg-muted rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                />
+                <div className="flex gap-2 mt-2">
+                  <input
+                    type="date"
+                    value={editModalDueDate}
+                    onChange={(e) => setEditModalDueDate(e.target.value)}
+                    className="flex-1 px-3 py-2 bg-muted rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  {editModalDueDate && (
+                    <button
+                      type="button"
+                      onClick={() => setEditModalDueDate('')}
+                      className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground bg-muted rounded-lg"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Reminder */}
@@ -453,13 +484,24 @@ export default function TasksPage() {
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   Reminder
                 </label>
-                <input
-                  type="datetime-local"
-                  value={editModalNotifyAt}
-                  onChange={(e) => setEditModalNotifyAt(e.target.value)}
-                  step="60"
-                  className="w-full mt-2 px-3 py-2 bg-muted rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                />
+                <div className="flex gap-2 mt-2">
+                  <input
+                    type="datetime-local"
+                    value={editModalNotifyAt}
+                    onChange={(e) => setEditModalNotifyAt(e.target.value)}
+                    step="60"
+                    className="flex-1 px-3 py-2 bg-muted rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  {editModalNotifyAt && (
+                    <button
+                      type="button"
+                      onClick={() => setEditModalNotifyAt('')}
+                      className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground bg-muted rounded-lg"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
