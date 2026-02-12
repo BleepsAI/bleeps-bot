@@ -211,7 +211,7 @@ export default function ChatPage() {
 
   useEffect(() => {
     scrollToBottom()
-  }, [messages])
+  }, [messages, polls])
 
   const switchChat = (chat: ChatInfo) => {
     setCurrentChat(chat)
@@ -681,7 +681,17 @@ export default function ChatPage() {
           chatId={chatId}
           userId={userId}
           onClose={() => setShowCreatePoll(false)}
-          onCreated={(pollId) => setPolls(prev => [...prev, { id: pollId, createdAt: new Date() }])}
+          onCreated={async () => {
+            // Refetch all polls to ensure consistency
+            const response = await fetch(`/api/polls?chatId=${chatId}`)
+            if (response.ok) {
+              const data = await response.json()
+              setPolls((data.polls || []).map((p: { id: string; created_at: string }) => ({
+                id: p.id,
+                createdAt: new Date(p.created_at)
+              })))
+            }
+          }}
         />
       )}
 
