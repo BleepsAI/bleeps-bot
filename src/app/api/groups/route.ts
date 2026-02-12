@@ -85,14 +85,18 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// PATCH /api/groups - Update group name
+// PATCH /api/groups - Update group name or privacy
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json()
-    const { groupId, userId, name } = body
+    const { groupId, userId, name, privacy_level } = body
 
-    if (!groupId || !userId || !name) {
-      return NextResponse.json({ error: 'groupId, userId, and name required' }, { status: 400 })
+    if (!groupId || !userId) {
+      return NextResponse.json({ error: 'groupId and userId required' }, { status: 400 })
+    }
+
+    if (!name && !privacy_level) {
+      return NextResponse.json({ error: 'name or privacy_level required' }, { status: 400 })
     }
 
     // Verify user is owner of the group
@@ -107,10 +111,20 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Not authorized' }, { status: 403 })
     }
 
-    // Update group name
+    // Build update object
+    const updates: { name?: string; privacy_level?: string; encryption_enabled?: boolean } = {}
+    if (name) {
+      updates.name = name
+    }
+    if (privacy_level) {
+      updates.privacy_level = privacy_level
+      updates.encryption_enabled = privacy_level === 'private' || privacy_level === 'sealed'
+    }
+
+    // Update group
     const { error: updateError } = await supabase
       .from('chats')
-      .update({ name })
+      .update(updates)
       .eq('id', groupId)
 
     if (updateError) {

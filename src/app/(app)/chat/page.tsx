@@ -468,6 +468,53 @@ export default function ChatPage() {
     }
   }
 
+  const enableEncryption = async () => {
+    if (!currentChat || currentChat.encryption_enabled) return
+
+    setGroupActionLoading(true)
+    try {
+      // Generate encryption key first
+      const newKey = await generateChatKey()
+      const exportedKey = await exportKey(newKey)
+
+      // Update group privacy in database
+      const response = await fetch('/api/groups', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          groupId: currentChat.id,
+          userId,
+          privacy_level: 'private'
+        })
+      })
+
+      if (response.ok) {
+        // Store the key locally
+        storeChatKey(currentChat.id, exportedKey)
+        setChatKey(newKey)
+        setKeyMissing(false)
+
+        // Update local state
+        const updatedChat = {
+          ...currentChat,
+          privacy_level: 'private' as const,
+          encryption_enabled: true
+        }
+        setCurrentChat(updatedChat)
+        setChats(prev => ({
+          ...prev,
+          groups: prev.groups.map(g =>
+            g.id === currentChat.id ? updatedChat : g
+          )
+        }))
+      }
+    } catch (error) {
+      console.error('Error enabling encryption:', error)
+    } finally {
+      setGroupActionLoading(false)
+    }
+  }
+
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return
 
@@ -725,7 +772,7 @@ export default function ChatPage() {
                 {/* Create Group Hint */}
                 <div className="border-t border-border mt-2 pt-2">
                   <p className="text-xs text-muted-foreground px-3 py-2">
-                    Say &quot;create a group called [name]&quot; to make a new group
+                    Say &quot;create a group called [name]&quot; or &quot;create a private group called [name]&quot; for E2E encryption
                   </p>
                 </div>
               </div>
@@ -852,18 +899,51 @@ export default function ChatPage() {
               )}
             </div>
 
-            {/* Encryption Info */}
-            {currentChat.encryption_enabled && (
-              <div className="mb-6 p-3 bg-green-500/10 rounded-lg">
-                <div className="flex items-center gap-2 text-sm text-green-500 font-medium mb-1">
-                  <Lock className="h-4 w-4" />
-                  End-to-End Encrypted
+            {/* Privacy / Encryption */}
+            <div className="mb-6">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Privacy
+              </label>
+              {currentChat.encryption_enabled ? (
+                <div className="mt-2 p-3 bg-green-500/10 rounded-lg">
+                  <div className="flex items-center gap-2 text-sm text-green-500 font-medium mb-1">
+                    <Lock className="h-4 w-4" />
+                    End-to-End Encrypted
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Messages are encrypted before leaving your device. Only group members with the key can read them. Type @bleeps to ask the AI for help.
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Messages are encrypted before leaving your device. Only group members with the key can read them. Type @bleeps to ask the AI for help.
-                </p>
-              </div>
-            )}
+              ) : (
+                <div className="mt-2">
+                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                    <div>
+                      <div className="text-sm font-medium">Open Group</div>
+                      <p className="text-xs text-muted-foreground">AI has full access to messages</p>
+                    </div>
+                    {currentChat.role === 'owner' && (
+                      <button
+                        onClick={enableEncryption}
+                        disabled={groupActionLoading}
+                        className="px-3 py-1.5 text-xs font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 flex items-center gap-1.5"
+                      >
+                        {groupActionLoading ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <Lock className="h-3 w-3" />
+                        )}
+                        Make Private
+                      </button>
+                    )}
+                  </div>
+                  {currentChat.role === 'owner' && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Private groups use E2E encryption. Only @bleeps mentions will be visible to AI.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Invite Link */}
             {currentChat.role === 'owner' && currentChat.invite_code && (
