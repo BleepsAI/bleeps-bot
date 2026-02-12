@@ -176,21 +176,25 @@ export default function ChatPage() {
 
   // Fetch polls for chat
   useEffect(() => {
+    console.log('[Polls] useEffect triggered, chatId:', chatId)
     if (!chatId) {
       setPolls([])
       return
     }
 
     const fetchPolls = async () => {
+      console.log('[Polls] Fetching polls for chatId:', chatId)
       try {
         const response = await fetch(`/api/polls?chatId=${chatId}`)
+        console.log('[Polls] Response status:', response.status)
         if (response.ok) {
           const data = await response.json()
+          console.log('[Polls] Data received:', data)
           const pollIds = (data.polls || []).map((p: { id: string }) => p.id)
           setPolls(pollIds)
         }
       } catch (error) {
-        console.error('Error fetching polls:', error)
+        console.error('[Polls] Error fetching polls:', error)
       }
     }
 
