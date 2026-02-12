@@ -457,6 +457,7 @@ export default function TasksPage() {
                   type="datetime-local"
                   value={editModalNotifyAt}
                   onChange={(e) => setEditModalNotifyAt(e.target.value)}
+                  step="60"
                   className="w-full mt-2 px-3 py-2 bg-muted rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
