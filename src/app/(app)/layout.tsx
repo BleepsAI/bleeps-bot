@@ -2,12 +2,12 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { MessageSquare, Inbox, CheckSquare, Settings } from 'lucide-react'
+import { MessageSquare, CheckSquare, Bell, Settings } from 'lucide-react'
 
 const tabs = [
   { href: '/chat', label: 'Chat', icon: MessageSquare },
-  { href: '/inbox', label: 'Inbox', icon: Inbox },
   { href: '/tasks', label: 'Tasks', icon: CheckSquare },
+  { href: '/inbox', label: 'Notifications', icon: Bell },
   { href: '/settings', label: 'Settings', icon: Settings },
 ]
 
