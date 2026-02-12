@@ -12,7 +12,19 @@ const supabase = createClient(
 
 export async function POST(request: NextRequest) {
   try {
-    const { messages, userId, detectedTimezone, isGreeting, chatId } = await request.json()
+    const {
+      messages,
+      userId,
+      detectedTimezone,
+      isGreeting,
+      chatId,
+      // E2E encryption fields
+      encrypted,
+      iv,
+      bleepsContent,
+      bleepsIv,
+      bleepsEphemeralKey
+    } = await request.json()
 
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: 'Messages required' }, { status: 400 })
@@ -61,20 +73,45 @@ export async function POST(request: NextRequest) {
 
     // Call OpenClaw gateway
     const lastMessage = messages[messages.length - 1]
+    const gatewayRequest: {
+      message: string
+      userId: string | null
+      chatId: string | null
+      channel: string
+      detectedTimezone: string | null
+      isGreeting: boolean
+      encrypted?: boolean
+      iv?: string
+      bleepsContent?: string
+      bleepsIv?: string
+      bleepsEphemeralKey?: string
+    } = {
+      message: lastMessage.content,
+      userId: userId || null,
+      chatId: chatId || null,
+      channel: 'web',
+      detectedTimezone: detectedTimezone || null,
+      isGreeting: isGreeting || false,
+    }
+
+    // Add encryption fields if present
+    if (encrypted) {
+      gatewayRequest.encrypted = true
+      gatewayRequest.iv = iv
+      if (bleepsContent) {
+        gatewayRequest.bleepsContent = bleepsContent
+        gatewayRequest.bleepsIv = bleepsIv
+        gatewayRequest.bleepsEphemeralKey = bleepsEphemeralKey
+      }
+    }
+
     const gatewayResponse = await fetch(`${OPENCLAW_GATEWAY_URL}/api/message`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${OPENCLAW_GATEWAY_TOKEN}`,
       },
-      body: JSON.stringify({
-        message: lastMessage.content,
-        userId: userId || null,
-        chatId: chatId || null,
-        channel: 'web',
-        detectedTimezone: detectedTimezone || null,
-        isGreeting: isGreeting || false,
-      }),
+      body: JSON.stringify(gatewayRequest),
     })
 
     if (!gatewayResponse.ok) {

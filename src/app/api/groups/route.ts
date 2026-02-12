@@ -12,6 +12,8 @@ interface ChatData {
   name: string
   invite_code: string | null
   created_at: string
+  privacy_level: 'open' | 'private' | 'sealed'
+  encryption_enabled: boolean
 }
 
 interface MembershipWithChat {
@@ -40,7 +42,9 @@ export async function GET(request: NextRequest) {
           type,
           name,
           invite_code,
-          created_at
+          created_at,
+          privacy_level,
+          encryption_enabled
         )
       `)
       .eq('user_id', userId)
@@ -62,7 +66,9 @@ export async function GET(request: NextRequest) {
         name: m.chats!.name,
         role: m.role,
         invite_code: m.role === 'owner' ? m.chats!.invite_code : undefined,
-        created_at: m.chats!.created_at
+        created_at: m.chats!.created_at,
+        privacy_level: m.chats!.privacy_level || 'open',
+        encryption_enabled: m.chats!.encryption_enabled || false
       }))
 
     return NextResponse.json({

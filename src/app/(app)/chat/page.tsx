@@ -1,10 +1,23 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Send, Mic, ChevronDown, Users, User, Share2, Copy, Check, X, Pencil, Trash2, Loader2, BarChart3, MoreVertical } from 'lucide-react'
+import { Send, Mic, ChevronDown, Users, User, Share2, Copy, Check, X, Pencil, Trash2, Loader2, BarChart3, MoreVertical, Lock, ShieldCheck } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import PollCard from '@/components/PollCard'
 import CreatePollModal from '@/components/CreatePollModal'
+import {
+  generateChatKey,
+  exportKey,
+  importKey,
+  storeChatKey,
+  getChatKey,
+  hasChatKey,
+  encryptForPrivateChat,
+  decryptMessagesForDisplay,
+  extractKeyFromHash,
+  createKeyHash,
+  importServerPublicKey,
+} from '@/lib/crypto'
 
 interface Message {
   id: string
@@ -14,6 +27,9 @@ interface Message {
   senderId?: string
   senderName?: string
   isOwnMessage?: boolean
+  encrypted?: boolean
+  iv?: string
+  decryptionError?: boolean
 }
 
 interface PollInfo {
@@ -27,6 +43,8 @@ interface ChatInfo {
   name: string
   role?: string
   invite_code?: string
+  privacy_level?: 'open' | 'private' | 'sealed'
+  encryption_enabled?: boolean
 }
 
 export default function ChatPage() {
@@ -48,8 +66,91 @@ export default function ChatPage() {
   const [showCreatePoll, setShowCreatePoll] = useState(false)
   const [polls, setPolls] = useState<PollInfo[]>([])
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  // E2E Encryption state
+  const [chatKey, setChatKey] = useState<CryptoKey | null>(null)
+  const [serverPublicKey, setServerPublicKey] = useState<CryptoKey | null>(null)
+  const [keyMissing, setKeyMissing] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+
+  // Fetch server public key on mount (for @bleeps encryption)
+  useEffect(() => {
+    const fetchServerKey = async () => {
+      try {
+        const response = await fetch('/api/crypto')
+        if (response.ok) {
+          const data = await response.json()
+          if (data.enabled && data.publicKey) {
+            const key = await importServerPublicKey(data.publicKey)
+            setServerPublicKey(key)
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch server public key:', error)
+      }
+    }
+    fetchServerKey()
+  }, [])
+
+  // Load encryption key when switching to a private chat
+  useEffect(() => {
+    const loadChatKey = async () => {
+      if (!currentChat?.encryption_enabled || !chatId) {
+        setChatKey(null)
+        setKeyMissing(false)
+        return
+      }
+
+      // Check URL hash for key (when joining via invite link)
+      if (typeof window !== 'undefined') {
+        const hashKey = extractKeyFromHash(window.location.hash)
+        if (hashKey) {
+          try {
+            const key = await importKey(hashKey)
+            storeChatKey(chatId, hashKey)
+            setChatKey(key)
+            setKeyMissing(false)
+            // Clear the hash from URL
+            window.history.replaceState(null, '', window.location.pathname)
+            return
+          } catch (error) {
+            console.error('Failed to import key from URL:', error)
+          }
+        }
+      }
+
+      // Try to load from localStorage
+      const storedKey = getChatKey(chatId)
+      if (storedKey) {
+        try {
+          const key = await importKey(storedKey)
+          setChatKey(key)
+          setKeyMissing(false)
+        } catch (error) {
+          console.error('Failed to import stored key:', error)
+          setKeyMissing(true)
+        }
+      } else if (currentChat.role === 'owner') {
+        // Owner doesn't have a key yet - generate one
+        try {
+          const newKey = await generateChatKey()
+          const exportedKey = await exportKey(newKey)
+          storeChatKey(chatId, exportedKey)
+          setChatKey(newKey)
+          setKeyMissing(false)
+          console.log('Generated new encryption key for private group')
+        } catch (error) {
+          console.error('Failed to generate encryption key:', error)
+          setKeyMissing(true)
+        }
+      } else {
+        // Non-owner without key - they need the invite link
+        setKeyMissing(true)
+      }
+    }
+
+    loadChatKey()
+  }, [currentChat, chatId])
 
   // Fetch chats on mount
   useEffect(() => {
@@ -116,8 +217,8 @@ export default function ChatPage() {
           const messagesData = await messagesResponse.json()
 
           if (messagesData.messages && messagesData.messages.length > 0) {
-            // We have existing messages, show them
-            setMessages(messagesData.messages.map((m: { id: string; role: 'user' | 'assistant'; content: string; timestamp: string; senderId?: string; senderName?: string; isOwnMessage?: boolean }) => ({
+            // We have existing messages
+            let processedMessages = messagesData.messages.map((m: { id: string; role: 'user' | 'assistant'; content: string; timestamp: string; senderId?: string; senderName?: string; isOwnMessage?: boolean; encrypted?: boolean; iv?: string }) => ({
               id: m.id,
               role: m.role,
               content: m.content,
@@ -125,7 +226,16 @@ export default function ChatPage() {
               senderId: m.senderId,
               senderName: m.senderName,
               isOwnMessage: m.isOwnMessage,
-            })))
+              encrypted: m.encrypted,
+              iv: m.iv,
+            }))
+
+            // Decrypt messages if this is an encrypted chat
+            if (currentChat?.encryption_enabled && chatKey) {
+              processedMessages = await decryptMessagesForDisplay(processedMessages, chatKey)
+            }
+
+            setMessages(processedMessages)
             setIsLoading(false)
             return
           }
@@ -221,9 +331,24 @@ export default function ChatPage() {
     setShowChatPicker(false)
   }
 
+  // Get invite URL for a group, including encryption key for private groups
+  const getInviteUrl = (group: ChatInfo): string => {
+    let inviteUrl = `${window.location.origin}/join/${group.invite_code}`
+
+    // For encrypted groups, include the key in the hash
+    if (group.encryption_enabled && group.id) {
+      const key = getChatKey(group.id)
+      if (key) {
+        inviteUrl += createKeyHash(key)
+      }
+    }
+
+    return inviteUrl
+  }
+
   const shareGroup = async (group: ChatInfo, e: React.MouseEvent) => {
     e.stopPropagation()
-    const inviteUrl = `${window.location.origin}/join/${group.invite_code}`
+    const inviteUrl = getInviteUrl(group)
 
     if (navigator.share) {
       try {
@@ -259,7 +384,7 @@ export default function ChatPage() {
 
   const copyGroupLink = async (group: ChatInfo, e: React.MouseEvent) => {
     e.stopPropagation()
-    const inviteUrl = `${window.location.origin}/join/${group.invite_code}`
+    const inviteUrl = getInviteUrl(group)
     await copyToClipboard(inviteUrl)
     setCopiedGroupId(group.id)
     setTimeout(() => setCopiedGroupId(null), 2000)
@@ -346,10 +471,12 @@ export default function ChatPage() {
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return
 
+    const messageContent = input.trim()
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: input.trim(),
+      content: messageContent,
       timestamp: new Date(),
     }
 
@@ -358,18 +485,52 @@ export default function ChatPage() {
     setIsLoading(true)
 
     try {
+      // Build request body
+      interface ChatRequestBody {
+        userId: string
+        chatId: string | null
+        messages: Array<{ role: string; content: string }>
+        detectedTimezone: string | null
+        encrypted?: boolean
+        iv?: string
+        bleepsContent?: string
+        bleepsIv?: string
+        bleepsEphemeralKey?: string
+      }
+
+      const requestBody: ChatRequestBody = {
+        userId,
+        chatId,
+        messages: [...messages, userMessage].map((m) => ({
+          role: m.role,
+          content: m.content,
+        })),
+        detectedTimezone,
+      }
+
+      // Encrypt if this is a private chat
+      if (currentChat?.encryption_enabled && chatKey) {
+        const encrypted = await encryptForPrivateChat(
+          messageContent,
+          chatKey,
+          serverPublicKey || undefined
+        )
+        requestBody.encrypted = true
+        requestBody.iv = encrypted.iv
+        // Override the last message with encrypted content
+        requestBody.messages[requestBody.messages.length - 1].content = encrypted.content
+        // Include @bleeps encrypted content if present
+        if (encrypted.bleepsContent) {
+          requestBody.bleepsContent = encrypted.bleepsContent
+          requestBody.bleepsIv = encrypted.bleepsIv
+          requestBody.bleepsEphemeralKey = encrypted.bleepsEphemeralKey
+        }
+      }
+
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId,
-          chatId,
-          messages: [...messages, userMessage].map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
-          detectedTimezone,
-        }),
+        body: JSON.stringify(requestBody),
       })
 
       if (!response.ok) throw new Error('Failed to send message')
@@ -380,6 +541,12 @@ export default function ChatPage() {
       if (data.chatId && data.chatId !== chatId) {
         setChatId(data.chatId)
         localStorage.setItem('bleeps_current_chat_id', data.chatId)
+      }
+
+      // For encrypted messages without @bleeps, there's no AI response
+      if (data.encrypted && !data.content) {
+        // Message was saved encrypted, no AI response expected
+        return
       }
 
       const assistantMessage: Message = {
@@ -519,6 +686,9 @@ export default function ChatPage() {
                         >
                           <Users className="h-4 w-4" />
                           <span className="text-sm">{group.name}</span>
+                          {group.encryption_enabled && (
+                            <Lock className="h-3 w-3 text-green-500" />
+                          )}
                           {group.role === 'owner' && (
                             <span className="text-xs text-muted-foreground">owner</span>
                           )}
@@ -564,15 +734,34 @@ export default function ChatPage() {
         </div>
 
         {/* Current chat indicator for groups - clickable to open details */}
-        {currentChat?.type === 'group' && (
-          <button
-            onClick={openGroupDetails}
-            className="text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full font-medium hover:bg-muted/80 transition-colors"
-          >
-            Group Settings
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {/* Encryption indicator */}
+          {currentChat?.encryption_enabled && (
+            <div className="flex items-center gap-1 text-xs text-green-500 bg-green-500/10 px-2 py-1 rounded-full">
+              <Lock className="h-3 w-3" />
+              <span>E2E</span>
+            </div>
+          )}
+          {currentChat?.type === 'group' && (
+            <button
+              onClick={openGroupDetails}
+              className="text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full font-medium hover:bg-muted/80 transition-colors"
+            >
+              Group Settings
+            </button>
+          )}
+        </div>
       </header>
+
+      {/* Key missing warning */}
+      {keyMissing && currentChat?.encryption_enabled && (
+        <div className="bg-yellow-500/10 border-b border-yellow-500/20 px-4 py-2">
+          <p className="text-sm text-yellow-500 flex items-center gap-2">
+            <ShieldCheck className="h-4 w-4" />
+            Encryption key not found. Ask the group owner for a new invite link to view messages.
+          </p>
+        </div>
+      )}
 
       {/* Group Details Modal */}
       {showGroupDetails && currentChat?.type === 'group' && (
@@ -642,7 +831,15 @@ export default function ChatPage() {
                 </div>
               ) : (
                 <div className="flex items-center justify-between mt-2">
-                  <span className="text-base">{currentChat.name}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">{currentChat.name}</span>
+                    {currentChat.encryption_enabled && (
+                      <span className="flex items-center gap-1 text-xs text-green-500 bg-green-500/10 px-2 py-0.5 rounded-full">
+                        <Lock className="h-3 w-3" />
+                        E2E
+                      </span>
+                    )}
+                  </div>
                   {currentChat.role === 'owner' && (
                     <button
                       onClick={() => setEditingGroupName(true)}
@@ -655,15 +852,28 @@ export default function ChatPage() {
               )}
             </div>
 
+            {/* Encryption Info */}
+            {currentChat.encryption_enabled && (
+              <div className="mb-6 p-3 bg-green-500/10 rounded-lg">
+                <div className="flex items-center gap-2 text-sm text-green-500 font-medium mb-1">
+                  <Lock className="h-4 w-4" />
+                  End-to-End Encrypted
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Messages are encrypted before leaving your device. Only group members with the key can read them. Type @bleeps to ask the AI for help.
+                </p>
+              </div>
+            )}
+
             {/* Invite Link */}
             {currentChat.role === 'owner' && currentChat.invite_code && (
               <div className="mb-6">
                 <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Invite Link
+                  Invite Link {currentChat.encryption_enabled && '(includes encryption key)'}
                 </label>
                 <div className="flex items-center gap-2 mt-2">
                   <code className="flex-1 px-3 py-2 bg-muted rounded-lg text-sm truncate">
-                    {`${window.location.origin}/join/${currentChat.invite_code}`}
+                    {getInviteUrl(currentChat)}
                   </code>
                   <button
                     onClick={(e) => copyGroupLink(currentChat, e)}

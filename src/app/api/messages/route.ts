@@ -17,10 +17,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'chatId required' }, { status: 400 })
     }
 
-    // Fetch messages with user_id (get newest first, then reverse for display)
+    // Fetch messages with user_id and encryption fields (get newest first, then reverse for display)
     const { data: rawData, error } = await supabase
       .from('messages')
-      .select('id, role, content, created_at, user_id')
+      .select('id, role, content, created_at, user_id, encrypted, iv')
       .eq('chat_id', chatId)
       .order('created_at', { ascending: false })
       .limit(limit)
@@ -58,7 +58,9 @@ export async function GET(request: NextRequest) {
         timestamp: m.created_at,
         senderId: m.user_id,
         senderName: m.user_id ? (userNames[m.user_id] || 'User') : null,
-        isOwnMessage: m.user_id === requestingUserId
+        isOwnMessage: m.user_id === requestingUserId,
+        encrypted: m.encrypted || false,
+        iv: m.iv || null
       }))
     })
   } catch (error) {

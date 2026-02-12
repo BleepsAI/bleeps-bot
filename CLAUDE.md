@@ -36,17 +36,33 @@ Next.js web app for Bleeps - a personal AI assistant. This is the UI layer.
 - **Completing task deletes its notification** from inbox
 - **Polls**: Group chat feature. Single-choice by default. Inline in chat feed at creation time. Creator can delete via three-dot menu.
 - **Trello integration**: OAuth connect via Settings > Integrations. Push/pull tasks to/from Trello boards.
+- **E2E Encrypted Private Chats**: Groups can be created with `privacy_level: 'private'` for E2E encryption. See below.
+
+## E2E Encryption (Private Chats)
+
+When a group is created as "Private", messages are encrypted client-side before being sent to the server:
+
+- **Encryption**: AES-256-GCM symmetric encryption with Web Crypto API
+- **Key sharing**: Encryption key is included in invite link hash (never sent to server)
+- **Key storage**: Keys stored in localStorage per chat
+- **@bleeps handling**: When mentioning @bleeps, message is also encrypted to server's ECDH public key so Claude can read and respond
+- **Visual indicators**: Lock icon in header and group list for encrypted chats
+
+**Key files:**
+- `src/lib/crypto.ts` - All encryption/decryption utilities
+- `src/app/api/crypto/route.ts` - Fetches server public key
+
+**How it works:**
+1. Owner creates Private group → generates AES key, stored locally
+2. Invite link includes key in hash: `/join/CODE#key=base64...`
+3. Members join → key extracted from hash, stored locally
+4. Messages encrypted before POST, decrypted after fetch
+5. @bleeps mentions: double-encrypt (group key + server key)
 
 ## Planned Features
 - **Trello bidirectional sync**: Webhook-based sync where moving cards between Trello lists updates task tags (e.g., trello-backlog → trello-inprogress). Moving to "Done" marks task completed.
 - **Group reminders**: "Remind everyone to respond to the poll at 5pm" - creates notification for each group member
-- **E2E Encrypted Chats (Private mode)**:
-  - Add `encryption_enabled` boolean to chats table
-  - Generate keypair on group create, share via invite link
-  - Encrypt/decrypt client-side using Web Crypto API
-  - @bleeps mentions include message encrypted to server's public key
-  - ~1-2 weeks of work
-  - Skip "Sealed" (on-chain) mode for now - niche use case
+- **Sealed mode**: No AI access at all, on-chain message hashes (skip for now - niche use case)
 
 ## Environment Variables
 - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Client-side Supabase
