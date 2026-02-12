@@ -15,10 +15,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'pollId, optionId, and userId required' }, { status: 400 })
     }
 
-    // Check if poll is closed
+    // Check if poll is closed and get multiple_choice setting
     const { data: poll } = await supabase
       .from('polls')
-      .select('closed_at')
+      .select('closed_at, multiple_choice')
       .eq('id', pollId)
       .single()
 
@@ -48,6 +48,15 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({ success: true, action: 'removed' })
     } else {
+      // For single-choice polls, remove any existing votes first
+      if (!poll?.multiple_choice) {
+        await supabase
+          .from('poll_votes')
+          .delete()
+          .eq('poll_id', pollId)
+          .eq('user_id', userId)
+      }
+
       // Add vote
       const { error } = await supabase
         .from('poll_votes')

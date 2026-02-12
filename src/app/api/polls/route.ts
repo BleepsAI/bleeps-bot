@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
         chat_id: chatId,
         creator_id: creatorId,
         question,
-        multiple_choice: true
+        multiple_choice: false
       })
       .select()
       .single()
