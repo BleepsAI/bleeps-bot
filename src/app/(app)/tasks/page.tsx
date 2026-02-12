@@ -377,14 +377,28 @@ export default function TasksPage() {
                       {tag}
                     </button>
                   ))}
-                  {/* Show custom tags that aren't in presets */}
-                  {editModalTags.filter(t => !PRESET_TAGS.includes(t)).map(tag => (
+                  {/* Show existing custom tags from all tasks */}
+                  {allTags.filter(t => !PRESET_TAGS.includes(t)).map(tag => (
+                    <button
+                      key={tag}
+                      onClick={() => toggleTag(tag)}
+                      className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                        editModalTags.includes(tag)
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                  {/* Show newly added custom tags not yet in allTags */}
+                  {editModalTags.filter(t => !PRESET_TAGS.includes(t) && !allTags.includes(t)).map(tag => (
                     <button
                       key={tag}
                       onClick={() => toggleTag(tag)}
                       className="px-3 py-1 text-xs rounded-full bg-primary text-primary-foreground"
                     >
-                      {tag} ×
+                      {tag}
                     </button>
                   ))}
                 </div>
