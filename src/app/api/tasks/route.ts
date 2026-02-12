@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     // Fetch tasks by user_id (how backend saves them)
     const { data: tasks, error } = await supabase
       .from('tasks')
-      .select('id, title, description, completed, due_date, created_at')
+      .select('id, title, description, completed, due_date, notify_at, notified, created_at')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
 
@@ -34,6 +34,8 @@ export async function GET(request: NextRequest) {
       description: t.description,
       completed: t.completed,
       dueDate: t.due_date,
+      notifyAt: t.notify_at,
+      notified: t.notified,
       createdAt: t.created_at
     }))
 
@@ -67,6 +69,14 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    // If task is completed, delete its notification from the log
+    if (completed === true) {
+      await supabase
+        .from('notification_log')
+        .delete()
+        .eq('task_id', taskId)
+    }
+
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Tasks PATCH error:', error)
@@ -82,6 +92,12 @@ export async function DELETE(request: NextRequest) {
     if (!taskId) {
       return NextResponse.json({ error: 'taskId required' }, { status: 400 })
     }
+
+    // Delete associated notifications first
+    await supabase
+      .from('notification_log')
+      .delete()
+      .eq('task_id', taskId)
 
     const { error } = await supabase
       .from('tasks')

@@ -10,11 +10,17 @@ interface Task {
   description?: string
   completed: boolean
   dueDate?: string
+  notifyAt?: string
+  notified?: boolean
   createdAt: string
 }
 
-function getSection(task: Task): 'overdue' | 'today' | 'tomorrow' | 'upcoming' | 'completed' | 'no-date' {
+function getSection(task: Task): 'overdue' | 'today' | 'tomorrow' | 'upcoming' | 'completed' | 'scheduled' | 'no-date' {
   if (task.completed) return 'completed'
+
+  // Tasks with notify_at but no due_date go to "scheduled"
+  if (task.notifyAt && !task.dueDate) return 'scheduled'
+
   if (!task.dueDate) return 'no-date'
 
   const due = new Date(task.dueDate)
@@ -52,6 +58,7 @@ const sections = [
   { key: 'today', label: 'Today' },
   { key: 'tomorrow', label: 'Tomorrow' },
   { key: 'upcoming', label: 'Upcoming' },
+  { key: 'scheduled', label: 'Scheduled Reminders' },
   { key: 'no-date', label: 'No Due Date' },
   { key: 'completed', label: 'Completed' },
 ] as const
@@ -266,16 +273,33 @@ export default function TasksPage() {
                             </button>
                           </div>
                         ) : (
-                          <span
-                            className={task.completed ? 'text-muted-foreground line-through' : 'font-medium'}
-                          >
-                            {task.title}
+                          <span className="flex items-center gap-1.5">
+                            <span
+                              className={task.completed ? 'text-muted-foreground line-through' : 'font-medium'}
+                            >
+                              {task.title}
+                            </span>
+                            {task.notifyAt && !task.completed && (
+                              <span title={task.notified ? 'Notification sent' : 'Notification pending'}>
+                                {task.notified ? '🔔' : '⏰'}
+                              </span>
+                            )}
                           </span>
                         )}
                       </div>
                       {task.dueDate && !task.completed && editingId !== task.id && (
                         <span className="text-xs text-muted-foreground">
                           {formatDueDate(task.dueDate)}
+                        </span>
+                      )}
+                      {!task.dueDate && task.notifyAt && !task.completed && editingId !== task.id && (
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(task.notifyAt).toLocaleString([], {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: 'numeric',
+                            minute: '2-digit'
+                          })}
                         </span>
                       )}
                       {editingId !== task.id && (
