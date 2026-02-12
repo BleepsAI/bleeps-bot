@@ -540,13 +540,13 @@ export default function TasksPage() {
                                 </span>
                               )}
                               {task.tags && task.tags.length > 0 && (
-                                <div className="flex gap-1.5 ml-1">
+                                <div className="flex gap-1.5 ml-2">
                                   {task.tags.map(tag => (
                                     <span
                                       key={tag}
-                                      className="text-xs text-muted-foreground"
+                                      className="px-2 py-0.5 text-xs bg-muted/50 text-muted-foreground rounded"
                                     >
-                                      #{tag}
+                                      {tag}
                                     </span>
                                   ))}
                                 </div>
