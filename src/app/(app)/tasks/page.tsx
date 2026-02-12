@@ -527,7 +527,8 @@ export default function TasksPage() {
                           </div>
                         ) : (
                           <div>
-                            <span className="flex items-center gap-1.5">
+                            {/* Desktop: title + tags inline */}
+                            <div className="hidden md:flex md:items-center md:gap-2">
                               <span
                                 className={task.completed ? 'text-muted-foreground line-through' : 'font-medium'}
                               >
@@ -538,29 +539,72 @@ export default function TasksPage() {
                                   {task.notified ? '🔔' : '⏰'}
                                 </span>
                               )}
-                            </span>
-                            {task.tags && task.tags.length > 0 && (
-                              <div className="flex gap-1 mt-1">
-                                {task.tags.map(tag => (
-                                  <span
-                                    key={tag}
-                                    className="px-2 py-0.5 text-xs bg-muted text-muted-foreground rounded-full"
-                                  >
-                                    {tag}
+                              {task.tags && task.tags.length > 0 && (
+                                <div className="flex gap-1.5 ml-1">
+                                  {task.tags.map(tag => (
+                                    <span
+                                      key={tag}
+                                      className="text-xs text-muted-foreground"
+                                    >
+                                      #{tag}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            {/* Mobile: title on first line, tags + date on second */}
+                            <div className="md:hidden">
+                              <span className="flex items-center gap-1.5">
+                                <span
+                                  className={task.completed ? 'text-muted-foreground line-through' : 'font-medium'}
+                                >
+                                  {task.title}
+                                </span>
+                                {task.notifyAt && !task.completed && (
+                                  <span title={task.notified ? 'Notification sent' : 'Notification pending'}>
+                                    {task.notified ? '🔔' : '⏰'}
                                   </span>
-                                ))}
-                              </div>
-                            )}
+                                )}
+                              </span>
+                              {(task.tags?.length > 0 || task.dueDate || task.notifyAt) && !task.completed && (
+                                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                  {task.tags?.map(tag => (
+                                    <span
+                                      key={tag}
+                                      className="px-2 py-0.5 text-xs bg-muted text-muted-foreground rounded-full"
+                                    >
+                                      {tag}
+                                    </span>
+                                  ))}
+                                  {task.dueDate && (
+                                    <span className="text-xs text-muted-foreground">
+                                      {formatDueDate(task.dueDate)}
+                                    </span>
+                                  )}
+                                  {!task.dueDate && task.notifyAt && (
+                                    <span className="text-xs text-muted-foreground">
+                                      {new Date(task.notifyAt).toLocaleString([], {
+                                        month: 'short',
+                                        day: 'numeric',
+                                        hour: 'numeric',
+                                        minute: '2-digit'
+                                      })}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         )}
                       </div>
+                      {/* Date - desktop only (mobile shows in second line) */}
                       {task.dueDate && !task.completed && editingId !== task.id && (
-                        <span className="text-xs text-muted-foreground">
+                        <span className="hidden md:block text-xs text-muted-foreground">
                           {formatDueDate(task.dueDate)}
                         </span>
                       )}
                       {!task.dueDate && task.notifyAt && !task.completed && editingId !== task.id && (
-                        <span className="text-xs text-muted-foreground">
+                        <span className="hidden md:block text-xs text-muted-foreground">
                           {new Date(task.notifyAt).toLocaleString([], {
                             month: 'short',
                             day: 'numeric',
