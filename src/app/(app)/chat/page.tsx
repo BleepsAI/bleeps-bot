@@ -571,11 +571,13 @@ export default function ChatPage() {
         body: formData,
       })
 
+      const result = await response.json()
+
       if (!response.ok) {
-        throw new Error('Transcription failed')
+        console.error('Transcription API error:', result)
+        throw new Error(result.details || result.error || 'Transcription failed')
       }
 
-      const result = await response.json()
       if (result.text) {
         // Append to existing input or set new
         setInput(prev => prev ? `${prev} ${result.text}` : result.text)
@@ -583,7 +585,7 @@ export default function ChatPage() {
       }
     } catch (error) {
       console.error('Transcription error:', error)
-      alert('Failed to transcribe audio. Please try again.')
+      alert(`Failed to transcribe: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setIsTranscribing(false)
     }
