@@ -81,6 +81,7 @@ export default function TasksPage() {
   const [editModalDueDate, setEditModalDueDate] = useState('')
   const [editModalNotifyAt, setEditModalNotifyAt] = useState('')
   const [saving, setSaving] = useState(false)
+  const [customTagInput, setCustomTagInput] = useState('')
   const editInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -137,6 +138,7 @@ export default function TasksPage() {
     setEditModalTags(task.tags || [])
     setEditModalDueDate(task.dueDate ? task.dueDate.split('T')[0] : '')
     setEditModalNotifyAt(task.notifyAt ? task.notifyAt.slice(0, 16) : '')
+    setCustomTagInput('')
     setMenuOpenId(null)
   }
 
@@ -189,6 +191,14 @@ export default function TasksPage() {
     setEditModalTags(prev =>
       prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
     )
+  }
+
+  const addCustomTag = () => {
+    const tag = customTagInput.trim().toLowerCase()
+    if (tag && !editModalTags.includes(tag)) {
+      setEditModalTags(prev => [...prev, tag])
+    }
+    setCustomTagInput('')
   }
 
   const startInlineEdit = (task: Task) => {
@@ -367,6 +377,39 @@ export default function TasksPage() {
                       {tag}
                     </button>
                   ))}
+                  {/* Show custom tags that aren't in presets */}
+                  {editModalTags.filter(t => !PRESET_TAGS.includes(t)).map(tag => (
+                    <button
+                      key={tag}
+                      onClick={() => toggleTag(tag)}
+                      className="px-3 py-1 text-xs rounded-full bg-primary text-primary-foreground"
+                    >
+                      {tag} ×
+                    </button>
+                  ))}
+                </div>
+                {/* Add custom tag */}
+                <div className="flex gap-2 mt-2">
+                  <input
+                    type="text"
+                    value={customTagInput}
+                    onChange={(e) => setCustomTagInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        addCustomTag()
+                      }
+                    }}
+                    placeholder="Add custom tag..."
+                    className="flex-1 px-3 py-1.5 bg-muted rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  <button
+                    onClick={addCustomTag}
+                    disabled={!customTagInput.trim()}
+                    className="px-3 py-1.5 text-xs bg-muted hover:bg-muted/80 rounded-lg disabled:opacity-50"
+                  >
+                    <Plus className="h-3 w-3" />
+                  </button>
                 </div>
               </div>
 
