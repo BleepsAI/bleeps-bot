@@ -1,0 +1,42 @@
+# Bleeps Frontend (bleeps-bot)
+
+## What is this?
+Next.js web app for Bleeps - a personal AI assistant. This is the UI layer.
+
+## Architecture
+- **Frontend**: This repo - Next.js deployed on Vercel
+- **Backend**: bleeps-2 (separate repo) - Express server on Railway
+- **Database**: Supabase (PostgreSQL)
+
+## Key Pages
+- `/chat` - Main chat interface, talks to bleeps-2 `/api/message`
+- `/tasks` - Task list with sections (Today, Tomorrow, Scheduled Reminders, etc.)
+- `/inbox` - Notification history (from `notification_log` table)
+- `/settings` - User preferences, theme, notification settings
+- `/login` - Supabase auth
+
+## Key Files
+- `src/app/(app)/` - Authenticated app pages
+- `src/app/api/` - API routes (mostly query Supabase directly)
+- `src/lib/auth-context.tsx` - Auth state management
+- `src/lib/supabase/` - Supabase client setup
+
+## API Routes
+- `/api/tasks` - GET/PATCH/DELETE tasks (also deletes from notification_log on complete)
+- `/api/inbox` - GET/PATCH/DELETE from notification_log
+- `/api/messages` - Conversation history
+- `/api/chat` - Proxy to bleeps-2 `/api/message`
+
+## Key Concepts
+- **Tasks with notifications**: Tasks show badges (⏰ pending, 🔔 sent) if they have `notify_at`
+- **Inbox = Notification log**: Shows history of sent notifications, not pending items
+- **Completing task deletes its notification** from inbox
+
+## Environment Variables
+- `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Client-side Supabase
+- `SUPABASE_SERVICE_ROLE_KEY` - Server-side Supabase
+- `NEXT_PUBLIC_VAPID_KEY` - Web push (client)
+- `BLEEPS_API_URL` - URL to bleeps-2 backend
+
+## Deployment
+- Vercel (auto-deploys on push to main)
