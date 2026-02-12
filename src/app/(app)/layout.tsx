@@ -46,12 +46,26 @@ export default function AppLayout({
     }
   }, [authUser?.id, pathname])
 
-  // Reset count when viewing inbox
+  // Poll for count while on inbox page (picks up read status changes)
   useEffect(() => {
-    if (pathname === '/inbox') {
-      setUnreadCount(0)
+    if (pathname === '/inbox' && authUser?.id) {
+      const refreshCount = async () => {
+        try {
+          const response = await fetch(`/api/inbox?userId=${authUser.id}`)
+          if (response.ok) {
+            const data = await response.json()
+            const unread = (data.items || []).filter((item: { isRead: boolean }) => !item.isRead).length
+            setUnreadCount(unread)
+          }
+        } catch (error) {
+          console.error('Error refreshing unread count:', error)
+        }
+      }
+      // Poll every 3 seconds while on inbox
+      const interval = setInterval(refreshCount, 3000)
+      return () => clearInterval(interval)
     }
-  }, [pathname])
+  }, [pathname, authUser?.id])
 
   return (
     <div className="flex flex-col h-screen-safe">
