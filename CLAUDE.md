@@ -31,6 +31,7 @@ Next.js web app for Bleeps - a personal AI assistant. This is the UI layer.
 
 ## Key Concepts
 - **Tasks with notifications**: Tasks show badges (⏰ pending, 🔔 sent) if they have `notify_at`
+- **Task tags**: Preset (work, personal, shopping, health, finance, home) + custom tags. Claude auto-tags on creation. Filter bar at top of tasks page. Responsive layout (inline on desktop, second row on mobile).
 - **Inbox = Notification log**: Shows history of sent notifications, not pending items
 - **Completing task deletes its notification** from inbox
 - **Polls**: Group chat feature. Single-choice by default. Inline in chat feed at creation time. Creator can delete via three-dot menu.

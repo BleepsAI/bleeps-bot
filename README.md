@@ -56,7 +56,7 @@ Not a chatbot you open — an assistant that runs in the background. Create remi
 
 - **Chat** — Natural language interface powered by Claude
 - **Reminders** — Create, list, complete with push/Telegram notifications
-- **Tasks** — Track todos with status management (overdue, today, tomorrow, upcoming sections)
+- **Tasks** — Track todos with tags and status sections (overdue, today, tomorrow, upcoming). Claude auto-tags tasks, users can add custom tags.
 - **Budget** — Log expenses, set category limits, view spending
 - **Groups** — Shared chats with family, roommates, teams
 - **Group Settings** — Edit group name, delete group
@@ -146,6 +146,7 @@ NEXT_PUBLIC_VAPID_PUBLIC_KEY=
 - [x] Mobile viewport fixes (100dvh)
 - [x] Toggle switch redesign for light/dark mode
 - [x] Tasks page with overdue section and fixed date logic
+- [x] Task tags (preset + custom) with filter bar and responsive layout
 
 ### Phase 4: Integrations (Planned)
 - [ ] Google Places (local recommendations)
