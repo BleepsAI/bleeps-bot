@@ -174,9 +174,9 @@ export default function ChatPage() {
     fetchMessages()
   }, [userId, chatId, detectedTimezone])
 
-  // Fetch polls for group chats
+  // Fetch polls for chat
   useEffect(() => {
-    if (!chatId || currentChat?.type !== 'group') {
+    if (!chatId) {
       setPolls([])
       return
     }
@@ -186,7 +186,8 @@ export default function ChatPage() {
         const response = await fetch(`/api/polls?chatId=${chatId}`)
         if (response.ok) {
           const data = await response.json()
-          setPolls((data.polls || []).map((p: { id: string }) => p.id))
+          const pollIds = (data.polls || []).map((p: { id: string }) => p.id)
+          setPolls(pollIds)
         }
       } catch (error) {
         console.error('Error fetching polls:', error)
@@ -194,7 +195,7 @@ export default function ChatPage() {
     }
 
     fetchPolls()
-  }, [chatId, currentChat?.type])
+  }, [chatId])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
