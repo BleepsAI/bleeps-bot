@@ -154,12 +154,20 @@ export default function TasksPage() {
     if (!editModalTask || !editModalTitle.trim()) return
 
     setSaving(true)
+
+    // Convert datetime-local format to ISO string
+    let notifyAtValue: string | null = null
+    if (editModalNotifyAt) {
+      // datetime-local gives us YYYY-MM-DDTHH:MM, convert to ISO
+      notifyAtValue = new Date(editModalNotifyAt).toISOString()
+    }
+
     const updates = {
       taskId: editModalTask.id,
       title: editModalTitle.trim(),
       tags: editModalTags,
       dueDate: editModalDueDate || null,
-      notifyAt: editModalNotifyAt || null
+      notifyAt: notifyAtValue
     }
 
     // Optimistic update

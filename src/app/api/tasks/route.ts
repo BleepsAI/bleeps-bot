@@ -56,12 +56,16 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'taskId required' }, { status: 400 })
     }
 
-    const updates: { completed?: boolean; title?: string; tags?: string[]; due_date?: string | null; notify_at?: string | null } = {}
+    const updates: { completed?: boolean; title?: string; tags?: string[]; due_date?: string | null; notify_at?: string | null; notified?: boolean } = {}
     if (completed !== undefined) updates.completed = completed
     if (title !== undefined) updates.title = title
     if (tags !== undefined) updates.tags = tags
     if (dueDate !== undefined) updates.due_date = dueDate
-    if (notifyAt !== undefined) updates.notify_at = notifyAt
+    if (notifyAt !== undefined) {
+      updates.notify_at = notifyAt
+      // Reset notified flag so the notification will be sent
+      updates.notified = false
+    }
 
     const { error } = await supabase
       .from('tasks')
