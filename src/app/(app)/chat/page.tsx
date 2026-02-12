@@ -393,6 +393,15 @@ export default function ChatPage() {
           })
         }
       }
+
+      // Check if a poll was created and refresh polls
+      if (data.content.toLowerCase().includes('poll created') && chatId) {
+        const pollsResponse = await fetch(`/api/polls?chatId=${chatId}`)
+        if (pollsResponse.ok) {
+          const pollsData = await pollsResponse.json()
+          setPolls((pollsData.polls || []).map((p: { id: string }) => p.id))
+        }
+      }
     } catch (error) {
       console.error('Error sending message:', error)
       const errorMessage: Message = {
