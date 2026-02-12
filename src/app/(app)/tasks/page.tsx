@@ -193,7 +193,14 @@ export default function TasksPage() {
 
   const groupedTasks = sections.map(section => ({
     ...section,
-    tasks: tasks.filter(t => getSection(t) === section.key)
+    tasks: tasks
+      .filter(t => getSection(t) === section.key)
+      .sort((a, b) => {
+        // Sort by due date, then notify_at, then created_at (earliest first)
+        const aDate = a.dueDate || a.notifyAt || a.createdAt
+        const bDate = b.dueDate || b.notifyAt || b.createdAt
+        return new Date(aDate).getTime() - new Date(bDate).getTime()
+      })
   }))
 
   return (
