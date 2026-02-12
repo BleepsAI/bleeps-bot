@@ -35,8 +35,10 @@ Next.js web app for Bleeps - a personal AI assistant. This is the UI layer.
 - **Inbox = Notification log**: Shows history of sent notifications, not pending items
 - **Completing task deletes its notification** from inbox
 - **Polls**: Group chat feature. Single-choice by default. Inline in chat feed at creation time. Creator can delete via three-dot menu.
+- **Trello integration**: OAuth connect via Settings > Integrations. Push/pull tasks to/from Trello boards.
 
 ## Planned Features
+- **Trello bidirectional sync**: Webhook-based sync where moving cards between Trello lists updates task tags (e.g., trello-backlog → trello-inprogress). Moving to "Done" marks task completed.
 - **Group reminders**: "Remind everyone to respond to the poll at 5pm" - creates notification for each group member
 - **E2E Encrypted Chats (Private mode)**:
   - Add `encryption_enabled` boolean to chats table
