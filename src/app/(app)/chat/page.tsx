@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Send, Mic, ChevronDown, Users, User, Share2, Copy, Check, X, Pencil, Trash2, Loader2 } from 'lucide-react'
+import { Send, Mic, ChevronDown, Users, User, Share2, Copy, Check, X, Pencil, Trash2, Loader2, BarChart3 } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
+import PollCard from '@/components/PollCard'
+import CreatePollModal from '@/components/CreatePollModal'
 
 interface Message {
   id: string
@@ -38,6 +40,8 @@ export default function ChatPage() {
   const [editingGroupName, setEditingGroupName] = useState(false)
   const [groupNameInput, setGroupNameInput] = useState('')
   const [groupActionLoading, setGroupActionLoading] = useState(false)
+  const [showCreatePoll, setShowCreatePoll] = useState(false)
+  const [polls, setPolls] = useState<string[]>([]) // poll IDs
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -169,6 +173,28 @@ export default function ChatPage() {
 
     fetchMessages()
   }, [userId, chatId, detectedTimezone])
+
+  // Fetch polls for group chats
+  useEffect(() => {
+    if (!chatId || currentChat?.type !== 'group') {
+      setPolls([])
+      return
+    }
+
+    const fetchPolls = async () => {
+      try {
+        const response = await fetch(`/api/polls?chatId=${chatId}`)
+        if (response.ok) {
+          const data = await response.json()
+          setPolls((data.polls || []).map((p: { id: string }) => p.id))
+        }
+      } catch (error) {
+        console.error('Error fetching polls:', error)
+      }
+    }
+
+    fetchPolls()
+  }, [chatId, currentChat?.type])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -628,8 +654,27 @@ export default function ChatPage() {
         />
       )}
 
+      {/* Create Poll Modal */}
+      {showCreatePoll && chatId && (
+        <CreatePollModal
+          chatId={chatId}
+          userId={userId}
+          onClose={() => setShowCreatePoll(false)}
+          onCreated={(pollId) => setPolls(prev => [pollId, ...prev])}
+        />
+      )}
+
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+        {/* Active Polls */}
+        {polls.length > 0 && (
+          <div className="space-y-3 mb-4">
+            {polls.map(pollId => (
+              <PollCard key={pollId} pollId={pollId} userId={userId} />
+            ))}
+          </div>
+        )}
+
         {messages.map((message, index) => {
           const isOwnMessage = message.role === 'user' && message.isOwnMessage !== false
           const isOtherUser = message.role === 'user' && message.isOwnMessage === false
@@ -689,6 +734,16 @@ export default function ChatPage() {
       {/* Input */}
       <div className="border-t border-border bg-background safe-bottom" style={{ padding: '12px 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* Poll button for groups */}
+          {currentChat?.type === 'group' && (
+            <button
+              onClick={() => setShowCreatePoll(true)}
+              className="flex-shrink-0 p-2.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors"
+              aria-label="Create poll"
+            >
+              <BarChart3 className="h-5 w-5" />
+            </button>
+          )}
           <textarea
             ref={inputRef}
             value={input}
