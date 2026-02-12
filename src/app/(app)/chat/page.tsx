@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Send, Mic, ChevronDown, Users, User, Share2, Copy, Check, X, Pencil, Trash2, Loader2, BarChart3, MoreVertical, Lock, ShieldCheck } from 'lucide-react'
+import { ArrowRight, Mic, ChevronDown, Users, User, Share2, Copy, Check, X, Pencil, Trash2, Loader2, BarChart3, MoreVertical, Lock, ShieldCheck } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import PollCard from '@/components/PollCard'
 import CreatePollModal from '@/components/CreatePollModal'
@@ -1300,7 +1300,7 @@ export default function ChatPage() {
             className="bg-primary text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
             aria-label="Send message"
           >
-            <Send className="h-5 w-5" />
+            <ArrowRight className="h-5 w-5" strokeWidth={1.5} />
           </button>
         </div>
       </div>
