@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     // Fetch tasks by user_id (how backend saves them)
     const { data: tasks, error } = await supabase
       .from('tasks')
-      .select('id, title, description, completed, due_date, notify_at, notified, created_at')
+      .select('id, title, description, completed, due_date, notify_at, notified, tags, created_at')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
 
@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
       dueDate: t.due_date,
       notifyAt: t.notify_at,
       notified: t.notified,
+      tags: t.tags || [],
       createdAt: t.created_at
     }))
 
@@ -49,15 +50,18 @@ export async function GET(request: NextRequest) {
 // PATCH /api/tasks - Update a task
 export async function PATCH(request: NextRequest) {
   try {
-    const { taskId, completed, title } = await request.json()
+    const { taskId, completed, title, tags, dueDate, notifyAt } = await request.json()
 
     if (!taskId) {
       return NextResponse.json({ error: 'taskId required' }, { status: 400 })
     }
 
-    const updates: { completed?: boolean; title?: string } = {}
+    const updates: { completed?: boolean; title?: string; tags?: string[]; due_date?: string | null; notify_at?: string | null } = {}
     if (completed !== undefined) updates.completed = completed
     if (title !== undefined) updates.title = title
+    if (tags !== undefined) updates.tags = tags
+    if (dueDate !== undefined) updates.due_date = dueDate
+    if (notifyAt !== undefined) updates.notify_at = notifyAt
 
     const { error } = await supabase
       .from('tasks')

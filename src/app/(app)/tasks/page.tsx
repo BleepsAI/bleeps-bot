@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Circle, CheckCircle2, Loader2, ListTodo, MoreVertical, Pencil, Trash2, X, Check } from 'lucide-react'
+import { Circle, CheckCircle2, Loader2, ListTodo, MoreVertical, Pencil, Trash2, X, Check, Tag, Plus } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 
 interface Task {
@@ -12,8 +12,11 @@ interface Task {
   dueDate?: string
   notifyAt?: string
   notified?: boolean
+  tags: string[]
   createdAt: string
 }
+
+const PRESET_TAGS = ['work', 'personal', 'shopping', 'health', 'finance', 'home']
 
 function getSection(task: Task): 'overdue' | 'today' | 'tomorrow' | 'upcoming' | 'completed' | 'scheduled' | 'no-date' {
   if (task.completed) return 'completed'
@@ -71,6 +74,13 @@ export default function TasksPage() {
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
+  const [filterTag, setFilterTag] = useState<string | null>(null)
+  const [editModalTask, setEditModalTask] = useState<Task | null>(null)
+  const [editModalTitle, setEditModalTitle] = useState('')
+  const [editModalTags, setEditModalTags] = useState<string[]>([])
+  const [editModalDueDate, setEditModalDueDate] = useState('')
+  const [editModalNotifyAt, setEditModalNotifyAt] = useState('')
+  const [saving, setSaving] = useState(false)
   const editInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -122,22 +132,81 @@ export default function TasksPage() {
   }
 
   const startEdit = (task: Task) => {
-    setEditingId(task.id)
-    setEditValue(task.title)
+    setEditModalTask(task)
+    setEditModalTitle(task.title)
+    setEditModalTags(task.tags || [])
+    setEditModalDueDate(task.dueDate ? task.dueDate.split('T')[0] : '')
+    setEditModalNotifyAt(task.notifyAt ? task.notifyAt.slice(0, 16) : '')
     setMenuOpenId(null)
   }
 
   const cancelEdit = () => {
+    setEditModalTask(null)
+    setEditModalTitle('')
+    setEditModalTags([])
+    setEditModalDueDate('')
+    setEditModalNotifyAt('')
+  }
+
+  const saveEditModal = async () => {
+    if (!editModalTask || !editModalTitle.trim()) return
+
+    setSaving(true)
+    const updates = {
+      taskId: editModalTask.id,
+      title: editModalTitle.trim(),
+      tags: editModalTags,
+      dueDate: editModalDueDate || null,
+      notifyAt: editModalNotifyAt || null
+    }
+
+    // Optimistic update
+    setTasks(prev =>
+      prev.map(t => t.id === editModalTask.id ? {
+        ...t,
+        title: editModalTitle.trim(),
+        tags: editModalTags,
+        dueDate: editModalDueDate || undefined,
+        notifyAt: editModalNotifyAt || undefined
+      } : t)
+    )
+
+    try {
+      await fetch('/api/tasks', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      })
+    } catch (error) {
+      console.error('Error updating task:', error)
+    } finally {
+      setSaving(false)
+      cancelEdit()
+    }
+  }
+
+  const toggleTag = (tag: string) => {
+    setEditModalTags(prev =>
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    )
+  }
+
+  const startInlineEdit = (task: Task) => {
+    setEditingId(task.id)
+    setEditValue(task.title)
+  }
+
+  const cancelInlineEdit = () => {
     setEditingId(null)
     setEditValue('')
   }
 
-  const saveEdit = async (taskId: string) => {
+  const saveInlineEdit = async (taskId: string) => {
     if (!editValue.trim()) return
 
     const oldTask = tasks.find(t => t.id === taskId)
     if (!oldTask || oldTask.title === editValue.trim()) {
-      cancelEdit()
+      cancelInlineEdit()
       return
     }
 
@@ -191,9 +260,17 @@ export default function TasksPage() {
     }
   }, [menuOpenId])
 
+  // Get all unique tags from tasks
+  const allTags = [...new Set(tasks.flatMap(t => t.tags || []))]
+
+  // Filter tasks by selected tag
+  const filteredTasks = filterTag
+    ? tasks.filter(t => t.tags?.includes(filterTag))
+    : tasks
+
   const groupedTasks = sections.map(section => ({
     ...section,
-    tasks: tasks
+    tasks: filteredTasks
       .filter(t => getSection(t) === section.key)
       .sort((a, b) => {
         // Sort by due date, then notify_at, then created_at (earliest first)
@@ -212,6 +289,132 @@ export default function TasksPage() {
           <span className="text-base text-muted-foreground">Tasks</span>
         </div>
       </header>
+
+      {/* Filter bar */}
+      {allTags.length > 0 && (
+        <div className="flex-shrink-0 px-4 py-2 border-b border-border overflow-x-auto">
+          <div className="flex gap-2">
+            <button
+              onClick={() => setFilterTag(null)}
+              className={`px-3 py-1 text-xs rounded-full whitespace-nowrap transition-colors ${
+                filterTag === null
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              All
+            </button>
+            {allTags.map(tag => (
+              <button
+                key={tag}
+                onClick={() => setFilterTag(tag === filterTag ? null : tag)}
+                className={`px-3 py-1 text-xs rounded-full whitespace-nowrap transition-colors ${
+                  filterTag === tag
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {editModalTask && (
+        <>
+          <div className="fixed inset-0 bg-black/50 z-50" onClick={cancelEdit} />
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md bg-card border border-border rounded-2xl shadow-xl z-50 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Edit Task</h2>
+              <button onClick={cancelEdit} className="p-1 hover:bg-muted rounded-lg">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Title */}
+              <div>
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Task
+                </label>
+                <input
+                  type="text"
+                  value={editModalTitle}
+                  onChange={(e) => setEditModalTitle(e.target.value)}
+                  className="w-full mt-2 px-3 py-2 bg-muted rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  autoFocus
+                />
+              </div>
+
+              {/* Tags */}
+              <div>
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Tags
+                </label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {PRESET_TAGS.map(tag => (
+                    <button
+                      key={tag}
+                      onClick={() => toggleTag(tag)}
+                      className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                        editModalTags.includes(tag)
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Due Date */}
+              <div>
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Due Date
+                </label>
+                <input
+                  type="date"
+                  value={editModalDueDate}
+                  onChange={(e) => setEditModalDueDate(e.target.value)}
+                  className="w-full mt-2 px-3 py-2 bg-muted rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+
+              {/* Reminder */}
+              <div>
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Reminder
+                </label>
+                <input
+                  type="datetime-local"
+                  value={editModalNotifyAt}
+                  onChange={(e) => setEditModalNotifyAt(e.target.value)}
+                  className="w-full mt-2 px-3 py-2 bg-muted rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={cancelEdit}
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-muted-foreground hover:bg-muted rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveEditModal}
+                disabled={saving || !editModalTitle.trim()}
+                className="flex-1 px-4 py-2.5 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+              >
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Tasks list */}
       <div className="flex-1 overflow-y-auto px-4 py-4">
@@ -261,37 +464,51 @@ export default function TasksPage() {
                               value={editValue}
                               onChange={(e) => setEditValue(e.target.value)}
                               onKeyDown={(e) => {
-                                if (e.key === 'Enter') saveEdit(task.id)
-                                if (e.key === 'Escape') cancelEdit()
+                                if (e.key === 'Enter') saveInlineEdit(task.id)
+                                if (e.key === 'Escape') cancelInlineEdit()
                               }}
                               className="flex-1 text-sm bg-muted px-2 py-1 rounded focus:outline-none focus:ring-2 focus:ring-primary"
                             />
                             <button
-                              onClick={() => saveEdit(task.id)}
+                              onClick={() => saveInlineEdit(task.id)}
                               className="p-1 text-green-500 hover:bg-muted rounded"
                             >
                               <Check className="h-4 w-4" />
                             </button>
                             <button
-                              onClick={cancelEdit}
+                              onClick={cancelInlineEdit}
                               className="p-1 text-muted-foreground hover:bg-muted rounded"
                             >
                               <X className="h-4 w-4" />
                             </button>
                           </div>
                         ) : (
-                          <span className="flex items-center gap-1.5">
-                            <span
-                              className={task.completed ? 'text-muted-foreground line-through' : 'font-medium'}
-                            >
-                              {task.title}
-                            </span>
-                            {task.notifyAt && !task.completed && (
-                              <span title={task.notified ? 'Notification sent' : 'Notification pending'}>
-                                {task.notified ? '🔔' : '⏰'}
+                          <div>
+                            <span className="flex items-center gap-1.5">
+                              <span
+                                className={task.completed ? 'text-muted-foreground line-through' : 'font-medium'}
+                              >
+                                {task.title}
                               </span>
+                              {task.notifyAt && !task.completed && (
+                                <span title={task.notified ? 'Notification sent' : 'Notification pending'}>
+                                  {task.notified ? '🔔' : '⏰'}
+                                </span>
+                              )}
+                            </span>
+                            {task.tags && task.tags.length > 0 && (
+                              <div className="flex gap-1 mt-1">
+                                {task.tags.map(tag => (
+                                  <span
+                                    key={tag}
+                                    className="px-2 py-0.5 text-xs bg-muted text-muted-foreground rounded-full"
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
                             )}
-                          </span>
+                          </div>
                         )}
                       </div>
                       {task.dueDate && !task.completed && editingId !== task.id && (
