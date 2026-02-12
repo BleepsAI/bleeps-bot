@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Send, Mic, ChevronDown, Users, User, Share2, Copy, Check, X, Pencil, Trash2, Loader2, BarChart3 } from 'lucide-react'
+import { Send, Mic, ChevronDown, Users, User, Share2, Copy, Check, X, Pencil, Trash2, Loader2, BarChart3, MoreVertical } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import PollCard from '@/components/PollCard'
 import CreatePollModal from '@/components/CreatePollModal'
@@ -47,6 +47,7 @@ export default function ChatPage() {
   const [groupActionLoading, setGroupActionLoading] = useState(false)
   const [showCreatePoll, setShowCreatePoll] = useState(false)
   const [polls, setPolls] = useState<PollInfo[]>([])
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -435,6 +436,38 @@ export default function ChatPage() {
     }
   }
 
+  const deleteMessage = async (messageId: string) => {
+    try {
+      const response = await fetch('/api/messages', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messageId, userId })
+      })
+      if (response.ok) {
+        setMessages(prev => prev.filter(m => m.id !== messageId))
+      }
+    } catch (error) {
+      console.error('Error deleting message:', error)
+    }
+    setOpenMenuId(null)
+  }
+
+  const deletePoll = async (pollId: string) => {
+    try {
+      const response = await fetch('/api/polls', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pollId, userId })
+      })
+      if (response.ok) {
+        setPolls(prev => prev.filter(p => p.id !== pollId))
+      }
+    } catch (error) {
+      console.error('Error deleting poll:', error)
+    }
+    setOpenMenuId(null)
+  }
+
   return (
     <div className="flex flex-col h-full">
       {/* Header with Chat Switcher */}
@@ -710,13 +743,40 @@ export default function ChatPage() {
 
           return feed.map((item, index) => {
             if (item.type === 'poll') {
-              return <PollCard key={`poll-${item.data.id}`} pollId={item.data.id} userId={userId} />
+              const pollId = item.data.id
+              const isMenuOpen = openMenuId === `poll-${pollId}`
+              return (
+                <div key={`poll-${pollId}`} className="relative group">
+                  <PollCard pollId={pollId} userId={userId} />
+                  <button
+                    onClick={() => setOpenMenuId(isMenuOpen ? null : `poll-${pollId}`)}
+                    className="absolute top-2 right-2 p-1.5 rounded-lg bg-card/80 opacity-0 group-hover:opacity-100 hover:bg-muted transition-all"
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </button>
+                  {isMenuOpen && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
+                      <div className="absolute top-8 right-2 bg-card border border-border rounded-lg shadow-lg z-50 py-1 min-w-[120px]">
+                        <button
+                          onClick={() => deletePoll(pollId)}
+                          className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-muted flex items-center gap-2"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Delete
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )
             }
 
             const message = item.data
             const isOwnMessage = message.role === 'user' && message.isOwnMessage !== false
             const isOtherUser = message.role === 'user' && message.isOwnMessage === false
             const isBleeps = message.role === 'assistant'
+            const isMenuOpen = openMenuId === `msg-${message.id}`
 
             // Show sender name in group chats for Bleeps and other users (not your own messages)
             const showSenderName = currentChat?.type === 'group' && !isOwnMessage
@@ -735,24 +795,50 @@ export default function ChatPage() {
             return (
               <div
                 key={message.id}
-                className={`flex flex-col ${alignRight ? 'items-end' : 'items-start'}`}
+                className={`flex flex-col ${alignRight ? 'items-end' : 'items-start'} group relative`}
               >
                 {showSenderName && !sameSenderAsPrev && (
                   <span className="text-xs text-muted-foreground mb-1 px-1">
                     {isBleeps ? 'Bleeps' : message.senderName}
                   </span>
                 )}
-                <div
-                  className={`max-w-[85%] rounded-2xl px-4 py-2.5 ${
-                    isOwnMessage
-                      ? 'bg-primary text-primary-foreground'
-                      : isBleeps
-                        ? 'bg-muted text-foreground'
-                        : 'bg-card text-foreground'
-                  }`}
-                >
-                  <p className="whitespace-pre-wrap leading-normal">{message.content}</p>
+                <div className="flex items-center gap-1">
+                  {/* Menu button for own messages - appears on left */}
+                  {isOwnMessage && (
+                    <button
+                      onClick={() => setOpenMenuId(isMenuOpen ? null : `msg-${message.id}`)}
+                      className="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-muted transition-all"
+                    >
+                      <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                  )}
+                  <div
+                    className={`max-w-[85%] rounded-2xl px-4 py-2.5 ${
+                      isOwnMessage
+                        ? 'bg-primary text-primary-foreground'
+                        : isBleeps
+                          ? 'bg-muted text-foreground'
+                          : 'bg-card text-foreground'
+                    }`}
+                  >
+                    <p className="whitespace-pre-wrap leading-normal">{message.content}</p>
+                  </div>
                 </div>
+                {/* Dropdown menu */}
+                {isMenuOpen && isOwnMessage && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setOpenMenuId(null)} />
+                    <div className="absolute top-6 right-0 bg-card border border-border rounded-lg shadow-lg z-50 py-1 min-w-[120px]">
+                      <button
+                        onClick={() => deleteMessage(message.id)}
+                        className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-muted flex items-center gap-2"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             )
           })

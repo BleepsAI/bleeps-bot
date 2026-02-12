@@ -147,3 +147,52 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to create poll' }, { status: 500 })
   }
 }
+
+// DELETE /api/polls - Delete a poll
+export async function DELETE(request: NextRequest) {
+  try {
+    const { pollId, userId } = await request.json()
+
+    if (!pollId || !userId) {
+      return NextResponse.json({ error: 'pollId and userId required' }, { status: 400 })
+    }
+
+    // Verify the user is the creator
+    const { data: poll } = await supabase
+      .from('polls')
+      .select('creator_id')
+      .eq('id', pollId)
+      .single()
+
+    if (!poll || poll.creator_id !== userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    }
+
+    // Delete votes first (foreign key constraint)
+    await supabase
+      .from('poll_votes')
+      .delete()
+      .eq('poll_id', pollId)
+
+    // Delete options
+    await supabase
+      .from('poll_options')
+      .delete()
+      .eq('poll_id', pollId)
+
+    // Delete poll
+    const { error } = await supabase
+      .from('polls')
+      .delete()
+      .eq('id', pollId)
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Delete poll error:', error)
+    return NextResponse.json({ error: 'Failed to delete poll' }, { status: 500 })
+  }
+}
