@@ -37,6 +37,13 @@ Next.js web app for Bleeps - a personal AI assistant. This is the UI layer.
 
 ## Planned Features
 - **Group reminders**: "Remind everyone to respond to the poll at 5pm" - creates notification for each group member
+- **E2E Encrypted Chats (Private mode)**:
+  - Add `encryption_enabled` boolean to chats table
+  - Generate keypair on group create, share via invite link
+  - Encrypt/decrypt client-side using Web Crypto API
+  - @bleeps mentions include message encrypted to server's public key
+  - ~1-2 weeks of work
+  - Skip "Sealed" (on-chain) mode for now - niche use case
 
 ## Environment Variables
 - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Client-side Supabase
